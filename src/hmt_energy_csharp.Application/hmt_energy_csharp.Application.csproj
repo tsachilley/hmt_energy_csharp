@@ -17,15 +17,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" />
     <PackageReference Include="NetCoreServer" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Data.OracleClient" Version="1.0.8" />
-    <PackageReference Include="Volo.Abp.Account.Application" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.Identity.Application" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.PermissionManagement.Application" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.FeatureManagement.Application" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="7.2.2" />
+    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.6.6" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+    <PackageReference Include="Volo.Abp.Account.Application" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.Identity.Application" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.Application" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.Application" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="7.4.5" />
   </ItemGroup>
 
 </Project>

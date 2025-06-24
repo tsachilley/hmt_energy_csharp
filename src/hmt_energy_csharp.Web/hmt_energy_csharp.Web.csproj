@@ -15,29 +15,36 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DistributedLock.Redis" Version="1.0.2" />
-    <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
+    <PackageReference Include="DistributedLock.Redis" Version="1.0.3" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.36.0" />
+    <PackageReference Include="Microsoft.NETCore.Targets" Version="5.0.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="7.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="7.0.20" />
+    <PackageReference Include="System.Formats.Asn1" Version="8.0.2" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.36.0" />
+    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.6.6" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.1" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite" Version="2.2.1" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite" Version="2.4.7" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Volo.Abp.Autofac" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.Caching.StackExchangeRedis" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.DistributedLocking" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.Client" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.Http.Client.Web" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.Http.Client.IdentityModel.Web" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.Swashbuckle" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.Identity.Web" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.TenantManagement.Web" Version="7.2.2" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="7.2.2" />
+    <PackageReference Include="Volo.Abp.Autofac" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.Caching.StackExchangeRedis" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.DistributedLocking" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.Client" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.Http.Client.Web" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.Http.Client.IdentityModel.Web" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.Swashbuckle" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.Identity.Web" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Web" Version="7.4.5" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="7.4.5" />
     <ProjectReference Include="..\hmt_energy_csharp.HttpApi.Client\hmt_energy_csharp.HttpApi.Client.csproj" />
     <ProjectReference Include="..\hmt_energy_csharp.HttpApi\hmt_energy_csharp.HttpApi.csproj" />
   </ItemGroup>
