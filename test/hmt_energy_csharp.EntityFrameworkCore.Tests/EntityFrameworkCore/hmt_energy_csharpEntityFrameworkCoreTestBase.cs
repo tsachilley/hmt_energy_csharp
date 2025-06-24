@@ -1,0 +1,5 @@
+namespace hmt_energy_csharp.EntityFrameworkCore;
+
+public abstract class hmt_energy_csharpEntityFrameworkCoreTestBase : hmt_energy_csharpTestBase<hmt_energy_csharpEntityFrameworkCoreTestModule>
+{
+}

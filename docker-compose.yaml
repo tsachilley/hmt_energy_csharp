@@ -1,0 +1,22 @@
+version: "3.7"
+services:
+  voyagedata_srv:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./voyagedata_srv.dockerfile
+    container_name: voyagedata_srv
+    ports:
+      - 10094:10094
+      - 30000:30000
+      - 60000:60000/udp
+      - 44364:44364
+    env_file:
+      - .env
+    volumes:
+      - /home/hmt/docker-compose/hmt_energy_csharp/logs:/app/Logs
+    networks:
+      - ms_network
+networks:
+  ms_network:
+    external: true

@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+option csharp_namespace = "hmt_energy_csharp.Protos";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/any.proto";
+
+service NavigationConfig {
+	
+	rpc Insert(InsertRequest) returns (InsertResponse);
+	rpc SelectOne(SelectOneRequest) returns (SelectOneResponse);
+	rpc SelectList(SelectListRequest) returns (SelectListResponse);
+	rpc Update(UpdateRequest) returns (UpdateResponse);
+	rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+}
+
+message InsertRequest
+{
+	google.protobuf.Value dto = 1;
+}
+
+message InsertResponse
+{
+	int32 result = 1;
+	string err_message=2;
+}
+
+message SelectOneRequest
+{
+    string parameters = 1;
+}
+
+message SelectOneResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+
+message SelectListRequest
+{
+	int32 page_number=1;
+	int32 count_per_page=2;
+	string sorting=3;
+	string asc=4;
+	string parameters=5;
+}
+
+message SelectListResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+
+message UpdateRequest
+{
+	google.protobuf.Value dto = 1;
+}
+
+message UpdateResponse
+{
+	int32 result = 1;
+	string err_message = 2;
+}
+
+message DeleteRequest
+{
+	google.protobuf.Value dto = 1;
+}
+
+message DeleteResponse
+{
+	int32 result = 1;
+	string err_message = 2;
+}

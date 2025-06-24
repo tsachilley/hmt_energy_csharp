@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option csharp_namespace = "hmt_energy_csharp.Protos";
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./;base";
+
+service Base {
+
+    // for device information
+    rpc GetDeviceByNumber(DeviceRequest) returns (DeviceInfoResp); // get device information
+
+}
+
+message DeviceInfo {
+    int32  id = 1;
+    string name = 2;
+    string number = 3;
+    int32  type = 4;
+    int32  shipId = 5;
+    int32  status = 6;
+}
+
+message DeviceRequest{
+    string number = 1;
+}
+
+message DeviceInfoResp {
+    DeviceInfo deviceInfo = 1;
+}

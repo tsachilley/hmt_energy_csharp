@@ -1,0 +1,151 @@
+syntax = "proto3";
+
+option csharp_namespace = "hmt_energy_csharp.Protos";
+
+import "google/protobuf/empty.proto";
+
+package base;
+
+option go_package = "./;base";
+
+service Base {
+
+    rpc GetDeviceByNumber(DeviceRequest) returns (DeviceInfoResp); // get device information
+    rpc CreateLog(LogInfo) returns (IdRes);
+    rpc GetShipById(IdRequest) returns (ShipInfoResp);
+    rpc GetLatestVoyageInfoByDeviceNumber(DeviceRequest) returns (VoyageInfoExtend);
+    rpc GetShipFuelSwitchRecordList(ShipFuelSwitchRecordListReq) returns (ShipFuelSwitchRecordListResp);
+    rpc GetVoyageInfoList(VoyageInfoListReq) returns (VoyageInfoListResp);  // get voyage_info list
+
+}
+
+message DeviceRequest{
+    string number = 1;
+}
+
+message DeviceInfoResp {
+    Device deviceInfo = 1;
+}
+
+message LogInfo{
+    int32   id = 1;
+    string  serial_number = 2;//序列号
+    string record_time = 3; //要求格式:"2006-01-02 15:04:05"
+    string content = 4;//内容
+    string log_type = 5;//类型
+    string creater = 6;//创建人
+    int32 ship_id = 7;
+}
+
+message IdRes {
+  int32 id = 1;
+}
+
+message ShipInfoResp {
+    ShipInfo ship_info = 1;
+}
+
+message IdRequest {
+  int32 id = 1;
+}
+
+message ShipInfo {
+    int32  id = 1;
+    string  type = 2;
+    int32  status = 3;
+    string name = 4;
+    string imo = 5;
+    string nick = 6;
+    string owner = 7;
+    string operator = 8;
+    string manager = 9;
+    int32  carrying = 10;
+    bool   online = 11;
+    int32  customer_id = 12;
+    double longitude =13;
+    double latitude = 14;
+    repeated Device devices = 15;
+    string type_name = 16;
+    string mmsi = 17;
+    string call_sign = 18;
+    string classification_society = 19;
+    string flag = 20;
+    float  width = 21;
+    float gt = 22;
+    float dwt = 23;
+    float length = 24;
+    float height = 25;
+    float max_draft = 26;
+    float pitch = 27;
+}
+
+message Device {
+    int32  id = 1;
+    string name = 2;
+    string number = 3;
+    string  type = 4;
+    int32  ship_id = 5;
+    int32  status = 6;
+    int32 order_id = 7;
+    string type_name = 8;
+}
+
+message ShipFuelSwitchRecordListReq{
+    PageInfo page_info = 1;
+    string date_from = 2;
+    string date_to = 3;
+    int32 ship_id = 4;
+}
+message ShipFuelSwitchRecordListResp{
+    int32 total = 1;
+    repeated ShipFuelSwitchRecordInfo list= 2;
+}
+message ShipFuelSwitchRecordInfo {
+    int32 id = 1;
+    int32 ship_id = 2;
+    string original_tank_number = 3; //原油箱号
+    string present_tank_number = 4; //新油箱号
+    string original_fuel_type = 5; //原燃油类型
+    string present_fuel_type = 6; //新燃油类型
+    string switch_time = 7; //切换时间
+}
+message PageInfo {
+  uint32 pn = 1;
+  uint32 ps = 2;
+}
+
+message VoyageInfoListReq{
+    PageInfo page_info = 1;
+    int32 ship_id = 2;
+    string voyage_no = 3;
+    string departure = 4;
+    string arrival = 5;
+    string mmsi = 6;
+    string dateFrom = 7;
+    string dateTo = 8;
+    int32 loadStatus = 9;
+}
+message VoyageInfoListResp{
+    int32 total = 1;
+    repeated VoyageInfoExtend list = 2;
+}
+message VoyageInfoExtend{
+    int32 id = 1;
+    int32 ship_id = 2;
+    string voyage_no = 3;
+    string departure = 4;
+    string arrival = 5;
+    int32 estimated_time_of_departure = 6;
+    int32 departure_time = 7;
+    int32 estimated_time_of_arrival = 8;
+    int32 arrival_time = 9;
+    float estimated_distance = 10;
+    float distance = 11;
+    string estimated_time_of_departure_str = 12;
+    string departure_time_str  = 13;
+    string estimated_time_of_arrival_str  = 14;
+    string arrival_time_str  = 15;
+    string ship_name = 16;
+    float boatload = 17;
+    int32 loadStatus = 18;
+}

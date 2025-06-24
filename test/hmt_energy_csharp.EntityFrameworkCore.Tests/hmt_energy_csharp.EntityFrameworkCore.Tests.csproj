@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <RootNamespace>hmt_energy_csharp</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\hmt_energy_csharp.EntityFrameworkCore\hmt_energy_csharp.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\hmt_energy_csharp.TestBase\hmt_energy_csharp.TestBase.csproj" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="7.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.2" />
+  </ItemGroup>
+
+</Project>

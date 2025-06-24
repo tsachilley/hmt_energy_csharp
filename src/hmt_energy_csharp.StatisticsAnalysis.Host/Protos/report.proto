@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option csharp_namespace = "hmt_energy_csharp.Protos";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+package report;
+
+service Report {
+	
+	rpc Noon(NoonRequest) returns (NoonResponse);
+
+	rpc Week(WeekRequest) returns (WeekResponse);
+
+	rpc MRV(MRVRequest) returns (MRVResponse);
+
+}
+
+message NoonRequest
+{
+	string number = 1;
+    google.protobuf.Timestamp date = 2;
+    google.protobuf.Timestamp departure_time = 3;
+}
+
+message NoonResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+
+message WeekRequest
+{
+    string parameters = 1;
+	string language=2;
+}
+
+message WeekResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+
+message MRVRequest
+{
+    string parameters = 1;
+}
+
+message MRVResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
