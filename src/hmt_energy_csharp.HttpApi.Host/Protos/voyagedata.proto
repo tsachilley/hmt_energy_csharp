@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+option csharp_namespace = "hmt_energy_csharp.Protos";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/any.proto";
+
+service VoyageData {
+
+	rpc Process(ProcessRequest) returns (ProcessResponse);
+
+	rpc RealTime(RealTimeRequest) returns (RealTimeResponse);
+
+	rpc History(HistoryRequest) returns (HistoryResponse);
+
+	rpc Analyse(AnalyseRequest) returns (AnalyseResponse);
+
+	rpc Distribution(DistributionRequest) returns (DistributionResponse);
+
+	rpc RealTimeForCustomer(RealTimeForCustomerRequest) returns (RealTimeForCustomerResponse);
+
+}
+
+message RealTimeForCustomerRequest{
+	repeated string numbers=1; 
+}
+
+message RealTimeForCustomerResponse{
+	google.protobuf.Value result = 1;
+	string code=2;
+}
+
+message ProcessRequest {
+	string host = 1;
+	string sentence = 2;
+}
+
+message ProcessResponse  {
+	string result = 1;
+	string code=2;
+}
+
+message RealTimeRequest {
+	string vdr_id = 1;
+}
+
+message RealTimeResponse  {
+	google.protobuf.Value result = 1;
+	string code=2;
+}
+
+message HistoryRequest{
+	string vdr_id=1;
+	int32 pageNum=2;
+	int32 pageCount=3;
+	string sorting=4;
+	string asc=5;
+	string startDate=6;
+	string endDate=7;
+	string shipspd=8;
+	string method=9;
+	string parameters=10;
+}
+
+message HistoryResponse{
+	google.protobuf.Value result = 1;
+	string code=2;
+}
+
+message AnalyseRequest{
+	string analyse_type=1;
+	google.protobuf.Value params = 2;
+	float prop_pitch=3;
+}
+
+message AnalyseResponse{
+	string result = 1;
+	bool status = 2;
+	string error_message = 3;
+}
+
+message DistributionRequest{
+	string analyse_type=1;
+	google.protobuf.Value params = 2;
+	float prop_pitch=3;
+}
+
+message DistributionResponse{
+	string result = 1;
+	bool status = 2;
+	string error_message = 3;
+}

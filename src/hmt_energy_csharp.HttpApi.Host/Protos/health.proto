@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option csharp_namespace = "hmt_energy_csharp.Protos";
+
+package grpc.health.v1;
+
+service Health {
+
+  rpc Check(HealthRequest) returns (HealthResponse);
+
+  rpc Watch(HealthRequest) returns (stream HealthResponse);
+
+}
+
+message HealthRequest {
+	string service = 1;
+}
+
+message HealthResponse  {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;
+  }
+  ServingStatus status = 1;
+}

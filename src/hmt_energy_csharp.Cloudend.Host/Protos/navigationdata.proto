@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+option csharp_namespace = "hmt_energy_csharp.Protos";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/any.proto";
+
+service NavigationData {
+
+	rpc NavigationDataRealTimeSingle(NavigationDataRealTimeSingleRequest) returns (NavigationDataRealTimeSingleResponse);
+	rpc NavigationDataRealTime(NavigationDataRealTimeRequest) returns (NavigationDataRealTimeResponse);
+	rpc NavigationDataQuery(NavigationDataQueryRequest) returns (NavigationDataQueryResponse);
+	rpc NavigationEnergyDistribution(EnergyDistributionRequest) returns (EnergyDistributionResponse);
+
+}
+
+message NavigationDataRealTimeSingleRequest{
+	string number=1;
+	string type=2;
+	string language = 3;
+}
+
+message NavigationDataRealTimeSingleResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+
+message NavigationDataRealTimeRequest{
+	repeated string numbers=1;
+}
+
+message NavigationDataRealTimeResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+
+message NavigationDataQueryRequest{
+	string number=1;
+	int32 page_number=2;
+	int32 count_per_page=3;
+	string sorting=4;
+	string asc=5;
+	string parameters=6;
+	string method=7;
+}
+
+message NavigationDataQueryResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+message NavigationDataQueryResponse_Res
+{
+	string id = 1 ;
+	string receiveDatetime  = 2 ;//接收时间
+	string longitude = 3 ;//经度
+	string latitude= 4 ;//纬度
+	double course = 5 ;//航向
+	double magneticVariation = 6 ;
+	double totalDistanceGrd = 7 ;//总对地里程
+	double resetDistanceGrd = 8 ;//重置后总对地里程
+	double totalDistanceWat = 9 ;//总对水里程
+	double resetDistanceWat = 10 ;//重置后总对水里程
+	double windDirection = 11 ;//风向
+	double windSpeed= 12 ;//风速
+	double waveHeight = 13 ;//浪高
+	double waveDirection = 14 ;//浪向
+	double temperature = 15 ;//温度
+	double pressure = 16 ;//气压
+	string weather = 17 ;//天气
+	double visibility = 18 ;//能见度
+	double waterSpeed = 19 ;//对水航速
+	double groundSpeed = 20 ;//对地航速
+	double bowDraft = 21 ;//船艏吃水
+	double asternDraft = 22 ;//船艉吃水
+	double portDraft = 23 ;//左舷吃水
+	double starBoardDraft = 24 ;//右舷吃水
+	double trim = 25 ;//纵倾
+	double heel = 26 ;//横倾
+	double draft = 27 ;//全船吃水
+	double depth = 28 ;//水深
+	double depthOffset = 29 ;//先不管
+	double mESFOC = 30 ;//主机燃油消耗率
+	double mEHFOConsumption = 31 ;//主机重油每小时消耗
+	double mEMDOConsumption= 32 ;//主机柴油消耗
+	double dGSFOC = 33 ;//辅机燃油消耗率
+	double dGHFOConsumption = 34 ;//辅机重油每小时消耗
+	double dGMDOConsumption = 35 ;//辅机柴油每小时消耗
+	double bLRSFOC = 36 ;//锅炉燃油消耗率
+	double bLRHFOConsumption = 37 ;//锅炉重油每小时消耗
+	double bLRMDOConsumption = 38 ;//锅炉柴油每小时消耗
+	double slip = 39 ;//滑失比
+	double mEPower = 40 ;//主轴功率
+	double torque = 41 ;//主轴扭矩
+	double mERpm = 42 ;//主轴转速
+	double thrust = 43 ;//主轴推力
+	string create_time = 44 ;
+	string update_time = 45 ;
+	string delete_time = 46 ;
+	double bLGHFOCACC = 47 ;//锅炉重油累计消耗
+	double bLGMDOCACC = 48 ;//锅炉柴油累计消耗
+	double bLRFCPerNm = 49 ;//锅炉每海里油耗
+	double bLRHFOCPerNm = 50 ;//锅炉重油每海里消耗
+	double bLRMDOCPerNm = 51 ;//锅炉柴油每海里消耗
+	double dGFCPerNm = 52 ;//辅机每海里油耗
+	double dGHFOCACC = 53 ;//辅机重油累计消耗
+	double dGHFOCPerNm = 54 ;//辅机重油每海里消耗
+	double dGMDOCACC = 55 ;//辅机柴油累计消耗
+	double dGMDOCPerNm = 56 ;//辅机柴油每海里消耗
+	double dGPower = 57 ;//辅机功率
+	double fCPerNm = 58 ;//全船每海里油耗
+	double hFOCPerNm= 59 ;//全船重油每海里消耗
+	double mDOCPerNm = 60 ;//全船柴油每海里消耗
+	double mEFCPerNm = 61 ;//主机每海里油耗
+	double mEHFOCACC = 62 ;//主机重油累计消耗
+	double mEHFOCPerNm = 63 ;//主机重油每海里消耗
+	double mEMDOCACC= 64 ;//主机柴油累计消耗
+	double mEMDOCPerNm = 65 ;//主机柴油每海里消耗
+	double sFOC = 66 ;//全船燃油消耗率
+	string sN_ = 67 ;
+	string status = 68 ;//航行状态
+	double rtCII_ = 69 ;
+	string uploaded_ = 70 ;
+}
+message EnergyDistributionRequest {
+	string parameters = 1;
+	string language = 2;
+}
+
+message EnergyDistributionResponse  {
+	google.protobuf.Value result = 1;
+	string err_message = 2;
+}

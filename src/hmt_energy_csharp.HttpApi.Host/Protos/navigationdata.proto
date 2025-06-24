@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option csharp_namespace = "hmt_energy_csharp.Protos";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/any.proto";
+
+service NavigationData {
+	
+	rpc NavigationDataRealTimeSingle(NavigationDataRealTimeSingleRequest) returns (NavigationDataRealTimeSingleResponse);
+	rpc NavigationDataRealTime(NavigationDataRealTimeRequest) returns (NavigationDataRealTimeResponse);
+	rpc NavigationDataQuery(NavigationDataQueryRequest) returns (NavigationDataQueryResponse);
+
+}
+
+message NavigationDataRealTimeSingleRequest{
+	string number=1; 
+}
+
+message NavigationDataRealTimeSingleResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+
+message NavigationDataRealTimeRequest{
+	repeated string numbers=1; 
+}
+
+message NavigationDataRealTimeResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+
+message NavigationDataQueryRequest{
+	string number=1;
+	int32 page_number=2;
+	int32 count_per_page=3;
+	string sorting=4;
+	string asc=5;
+	string parameters=6;
+	string method=7;
+}
+
+message NavigationDataQueryResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}

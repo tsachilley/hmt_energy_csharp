@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option csharp_namespace = "hmt_energy_csharp.Protos";
+
+import "google/protobuf/struct.proto";
+
+service StatisticsAnalysis {
+
+	rpc Statistics(StatisticsRequest) returns (StatisticsResponse);
+	rpc Analysis(AnalysisRequest) returns (AnalysisResponse);
+
+}
+
+message StatisticsRequest {
+	string category = 1;
+    string parameters=2;
+}
+
+message StatisticsResponse {
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
+
+message AnalysisRequest {
+	string category = 1;
+    string parameters=2;
+}
+
+message AnalysisResponse  {
+	google.protobuf.Value result = 1;
+	string err_message=2;
+}
