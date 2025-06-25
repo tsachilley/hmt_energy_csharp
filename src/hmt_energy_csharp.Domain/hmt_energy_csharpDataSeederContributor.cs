@@ -23,7 +23,7 @@ namespace hmt_energy_csharp
 
         public async Task SeedAsync(DataSeedContext context)
         {
-            if (await _totalIndicator.GetCountAsync() > 0)
+            /*if (await _totalIndicator.GetCountAsync() > 0)
             {
                 return;
             }
@@ -32,7 +32,7 @@ namespace hmt_energy_csharp
             {
                 ReceiveDatetime = DateTime.Now,
                 DeviceNo = "张三"
-            }, autoSave: true);
+            }, autoSave: true);*/
         }
     }
 }

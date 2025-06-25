@@ -141,6 +141,7 @@ public class hmt_energy_csharpWebModule : AbpModule
             .AddCookie("Cookies", options =>
             {
                 options.ExpireTimeSpan = TimeSpan.FromDays(365);
+                options.CheckTokenExpiration();
             })
             .AddAbpOpenIdConnect("oidc", options =>
             {

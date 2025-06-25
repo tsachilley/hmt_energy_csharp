@@ -20,7 +20,7 @@ public class EntityFrameworkCorehmt_energy_csharpDbSchemaMigrator
 
     public async Task MigrateAsync()
     {
-        /* We intentionally resolving the hmt_energy_csharpDbContext
+        /* We intentionally resolve the hmt_energy_csharpDbContext
          * from IServiceProvider (instead of directly injecting it)
          * to properly get the connection string of the current tenant in the
          * current scope.
