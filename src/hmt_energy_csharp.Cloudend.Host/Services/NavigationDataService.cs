@@ -508,7 +508,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 					case "generator":
 						result = new List<Generator> {
 								new Generator{
-									Number="NDY1273",
+									Number="SAD1",
 									ReceiveDatetime=DateTime.UtcNow,
 									DeviceNo="G1",
 									IsRuning=1,
@@ -556,7 +556,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 									LoadRatio=0
 								},
 								new Generator{
-									Number="NDY1273",
+									Number="SAD1",
 									ReceiveDatetime=DateTime.UtcNow,
 									DeviceNo="G2",
 									IsRuning=1,
@@ -604,7 +604,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 									LoadRatio=0
 								},
 								new Generator{
-									Number="NDY1273",
+									Number="SAD1",
 									ReceiveDatetime=DateTime.UtcNow,
 									DeviceNo="G3",
 									IsRuning=0,
@@ -652,7 +652,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 									LoadRatio=0
 								},
 								new Generator{
-									Number="NDY1273",
+									Number="SAD1",
 									ReceiveDatetime=DateTime.UtcNow,
 									DeviceNo="G4",
 									IsRuning=1,
@@ -708,7 +708,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 							sternSealings = new List<SternSealing> {
 								new SternSealing
 								{
-									Number = "NDY1273",
+									Number = "SAD1",
 									ReceiveDatetime = DateTime.UtcNow,
 									DeviceNo = "SternSealing1",
 									FrontTEMP = 0,
@@ -719,7 +719,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 							},
 							shafts = new List<Shaft> {
 								new Shaft{
-									Number="NDY1273",
+									Number="SAD1",
 									ReceiveDatetime=DateTime.UtcNow,
 									DeviceNo="Shaft1",
 									Power=0,
@@ -734,7 +734,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 					case "liquid":
 						result = new List<LiquidLevel> {
 								new LiquidLevel{
-									Number="NDY1273",
+									Number="SAD1",
 									ReceiveDatetime=DateTime.UtcNow,
 									DeviceNo="l1",
 									Level=0,
@@ -746,7 +746,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 					case "supply":
 						result = new List<SupplyUnit> {
 								new SupplyUnit{
-									Number="NDY1273",
+									Number="SAD1",
 									ReceiveDatetime=DateTime.UtcNow,
 									DeviceNo="s1",
 									IsRuning=1,
@@ -759,7 +759,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 					case "battery":
 						result = new List<Battery> {
 								new Battery{
-									Number="NDY1273",
+									Number="SAD1",
 									ReceiveDatetime=DateTime.UtcNow,
 									DeviceNo="b1",
 									SOC=100,
@@ -778,7 +778,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 									MinVoltageNo="0"
 								},
 								new Battery{
-									Number="NDY1273",
+									Number="SAD1",
 									ReceiveDatetime=DateTime.UtcNow,
 									DeviceNo="b2",
 									SOC=120,
@@ -802,23 +802,23 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 					case "er":
 						result = new
 						{
-							CompositeBoiler = new List<CompositeBoilerDto>() { new CompositeBoilerDto { Id = 50950, BLRBurnerRunning = 0, BLRHFOService = 0, BLRDGOService = 1, BLRFOP1On = 0, BLRFOP2On = 0, BLRFOTempLow = 0, BLRFOPressHigh = 0, BLRFOTempHigh = 0, BLRDGOTempHigh = 0, BLRHFOTempHigh = null, BLRGE1EXTempHigh = 0, BLRGE2EXTempHigh = 0, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COMPOSITEBOILER" } },
-							CompressedAirSupply = new List<CompressedAirSupplyDto>() { new CompressedAirSupplyDto { Id = 48778, MEStartPress = 27.4, MEControlPress = 6.9, ExhaustValuePress = 6.9, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COMPRESSEDAIRSUPPLY" } },
-							CoolingFreshWater = new List<CoolingFreshWaterDto>() { new CoolingFreshWaterDto { Id = 59244, LTCFWPress = 2.3, CCLTCFWOutTemp = 12.2, LTCFW1Press = null, LTCFW2Press = null, LTCFW3Press = null, MEJWCOutPress = null, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COOLINGFRESHWATER" } },
-							CoolingSeaWater = new List<CoolingSeaWaterDto>() { new CoolingSeaWaterDto { Id = 47539, CSWOutPress = 2.3, CSWOutTemp = 2.3, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COOLINGSEAWATER" } },
-							CoolingWater = new List<CoolingWaterDto>() { new CoolingWaterDto { Id = 51635, MEJacketInPress = 4.1, MEPressDrop = 1.8, MEOutPress = 2.5, MEJacketPressDrop = 1.8, MEInTemp = 84, MEJacketCyl1OutTemp = 82, MEJacketCyl2OutTemp = 83, MEJacketCyl3OutTemp = 83, MEJacketCyl4OutTemp = 83, MEJacketCyl5OutTemp = 83, MEJacketCyl6OutTemp = 83, MECCCyl1OutTemp = 84, MECCCyl2OutTemp = 84, MECCCyl3OutTemp = 83, MECCCyl4OutTemp = 84, MECCCyl5OutTemp = 84, MECCCyl6OutTemp = 84, MEACInPress = 2.2, MEACInTemp = 36, MEACOutTemp = 36, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COOLINGWATER" } },
-							CylinderLubOil = new List<CylinderLubOilDto>() { new CylinderLubOilDto { Id = 56253, MEInTemp = 42.7003550613796, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "CYLINDERLUBOIL" } },
-							ExhaustGas = new List<ExhaustGasDto>() { new ExhaustGasDto { Id = 51016, METCInTemp = 139, MECyl1AfterTemp = null, MECyl2AfterTemp = null, MECyl3AfterTemp = null, MECyl4AfterTemp = null, MECyl5AfterTemp = null, MECyl6AfterTemp = null, METCOutTemp = 130, MEReceiverPress = 0.1, METurbBackPress = 0, MEACInTemp = 25, MEACOutTemp = 36, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "EXHAUSTGAS", MECyl1AfterTempDev = -8, MECyl2AfterTempDev = -5, MECyl3AfterTempDev = -5, MECyl4AfterTempDev = 3, MECyl5AfterTempDev = 8, MECyl6AfterTempDev = 6 } },
-							FO = new List<FODto>() { new FODto { Id = 52551, MEInPressure = 8.1, MEInTemp = 35, MEHPOPLeakage = 0, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "FOS" } },
-							FOSupplyUnit = new List<FOSupplyUnitDto>() { new FOSupplyUnitDto { Id = 46281, HFOService = 1, DGOService = 1, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "FOSUPPLYUNIT" } },
-							LubOilPurifying = new List<LubOilPurifyingDto>() { new LubOilPurifyingDto { Id = 45732, MEFilterPressHigh = 0, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "LUBOILPURIFYING" } },
-							LubOil = new List<LubOilDto>() { new LubOilDto { Id = 49594, METCInPress = 2.1, METBSTemp = 46, MEMBTBInPress = 2.1, MEPistonCOInPress = 2.1, MEInTemp = 46, MECYL1PistonCOOutTemp = 47, MECYL2PistonCOOutTemp = 47, MECYL3PistonCOOutTemp = 47, MECYL4PistonCOOutTemp = 47, MECYL5PistonCOOutTemp = 47, MECYL6PistonCOOutTemp = 47, MECYL1PistonCOOutNoFlow = 0, MECYL2PistonCOOutNoFlow = 0, MECYL3PistonCOOutNoFlow = 0, MECYL4PistonCOOutNoFlow = 0, MECYL5PistonCOOutNoFlow = 0, MECYL6PistonCOOutNoFlow = 0, METCOutTemp = 47, MEWaterHigh = 0, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "LUBOIL" } },
-							MainGeneratorSet = new List<MainGeneratorSetDto>() { new MainGeneratorSetDto { Id = 160136, DGCFWInPress = 0.2, DGStartAirPress = 2.8, DGLOPress = 0.5, DGLOInTemp = 944.2, DGCFWOutTemp = 78, DGEGTC1To3InTemp = 366, DGEGTC4To6InTemp = 362, DGEngineSpeed = 902, DGEngineLoad = 206, DGEngineRunHour = 110, DGLOInPress = 0, DGLOFilterInPress = 0, DGControlAirPress = 0, DGTCLOPress = 0, DGEngineRunning = 1, DGUTemp = 39.3, DGVTemp = 39.4, DGWTemp = 37.9, DGBTDTemp = 40.1, DGCyl1ExTemp = 276, DGCyl2ExTemp = 284, DGCyl3ExTemp = 272, DGCyl4ExTemp = 284, DGCyl5ExTemp = 277, DGCyl6ExTemp = 268, DGTCEXOutTemp = 296, DGBoostAirPress = 0.1, DGFOInPress = 0.8, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINGENERATORSET1" }, new MainGeneratorSetDto { Id = 160134, DGCFWInPress = 0.1, DGStartAirPress = 2.7, DGLOPress = 0.1, DGLOInTemp = 37, DGCFWOutTemp = 69, DGEGTC1To3InTemp = 20, DGEGTC4To6InTemp = 23, DGEngineSpeed = 0, DGEngineLoad = 0, DGEngineRunHour = 11, DGLOInPress = 0, DGLOFilterInPress = 0, DGControlAirPress = 0, DGTCLOPress = 0, DGEngineRunning = 0, DGUTemp = 17.1, DGVTemp = 17.2, DGWTemp = 17.5, DGBTDTemp = 18.2, DGCyl1ExTemp = 66, DGCyl2ExTemp = 67, DGCyl3ExTemp = 67, DGCyl4ExTemp = 68, DGCyl5ExTemp = 68, DGCyl6ExTemp = 67, DGTCEXOutTemp = 17, DGBoostAirPress = 0, DGFOInPress = 0.7, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINGENERATORSET2" }, new MainGeneratorSetDto { Id = 160135, DGCFWInPress = 0.2, DGStartAirPress = 2.7, DGLOPress = 0.5, DGLOInTemp = 57, DGCFWOutTemp = 78, DGEGTC1To3InTemp = 366, DGEGTC4To6InTemp = 356, DGEngineSpeed = 902, DGEngineLoad = 193, DGEngineRunHour = 17, DGLOInPress = 0, DGLOFilterInPress = 0, DGControlAirPress = 0, DGTCLOPress = 0, DGEngineRunning = 1, DGUTemp = 39.2, DGVTemp = 38.7, DGWTemp = 37.4, DGBTDTemp = 38, DGCyl1ExTemp = 279, DGCyl2ExTemp = 294, DGCyl3ExTemp = 283, DGCyl4ExTemp = 277, DGCyl5ExTemp = 282, DGCyl6ExTemp = 291, DGTCEXOutTemp = 296, DGBoostAirPress = 0.1, DGFOInPress = 0.7, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINGENERATORSET3" } },
-							MainSwitchboard = new List<MainSwitchboardDto>() { new MainSwitchboardDto { Id = 162352, MBVoltageHigh = 0, MBVoltageLow = 0, MBFrequencyHigh = 0, MBFrequencyLow = 0, DGRunning = 1, DGPower = 208, DGVoltageL1L2 = 449.6, DGVoltageL2L3 = 449.7, DGVoltageL3L1 = 449.7, DGCurrentL1 = 326.3, DGCurrentL2 = 328.8, DGCurrentL3 = 328.5, DGFrequency = 60.1, DGPowerFactor = 0.8, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINSWITCHBOARD1" }, new MainSwitchboardDto { Id = 162353, MBVoltageHigh = 0, MBVoltageLow = 0, MBFrequencyHigh = 0, MBFrequencyLow = 0, DGRunning = 0, DGPower = 0, DGVoltageL1L2 = 0, DGVoltageL2L3 = 0, DGVoltageL3L1 = 0, DGCurrentL1 = 0, DGCurrentL2 = 0, DGCurrentL3 = 0, DGFrequency = 0, DGPowerFactor = 1, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINSWITCHBOARD2" }, new MainSwitchboardDto { Id = 162354, MBVoltageHigh = 0, MBVoltageLow = 0, MBFrequencyHigh = 0, MBFrequencyLow = 0, DGRunning = 1, DGPower = 190.1, DGVoltageL1L2 = 449.9, DGVoltageL2L3 = 450.1, DGVoltageL3L1 = 449.8, DGCurrentL1 = 310.8, DGCurrentL2 = 313.3, DGCurrentL3 = 313.3, DGFrequency = 60.1, DGPowerFactor = 0.7, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINSWITCHBOARD3" } },
-							MERemoteControl = new List<MERemoteControlDto>() { new MERemoteControlDto { Id = 53212, MERpm = -0.5, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MEREMOTECONTROL" } },
-							Miscellaneous = new List<MiscellaneousDto>() { new MiscellaneousDto { Id = 53398, MECCOMHigh = 0, MEAxialVibration = 0.6, MELoad = 0, METCSpeed = 327.68, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MISCELLANEOUS" } },
-							ScavengeAir = new List<ScavengeAirDto>() { new ScavengeAirDto { Id = 51091, MEReceiverTemp = 43, MEFBCyl1Temp = 43, MEFBCyl2Temp = 44, MEFBCyl3Temp = 45, MEFBCyl4Temp = 44, MEFBCyl5Temp = 44, MEFBCyl6Temp = 45, MEPress = 0.1, MECoolerPressDrop = 0, METCInTempA = 26, METCInTempB = 26, ERRelativeHumidity = 34, ERTemp = 14, ERAmbientPress = 1030.8, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "SCAVENGEAIR" } },
-							ShaftClutch = new List<ShaftClutchDto>() { new ShaftClutchDto { Id = 53235, SternAftTemp = 21, InterTemp = 31, Uploaded = 0, Number = "NDY1273", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "SHAFTCLUTCH" } },
+							CompositeBoiler = new List<CompositeBoilerDto>() { new CompositeBoilerDto { Id = 50950, BLRBurnerRunning = 0, BLRHFOService = 0, BLRDGOService = 1, BLRFOP1On = 0, BLRFOP2On = 0, BLRFOTempLow = 0, BLRFOPressHigh = 0, BLRFOTempHigh = 0, BLRDGOTempHigh = 0, BLRHFOTempHigh = null, BLRGE1EXTempHigh = 0, BLRGE2EXTempHigh = 0, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COMPOSITEBOILER" } },
+							CompressedAirSupply = new List<CompressedAirSupplyDto>() { new CompressedAirSupplyDto { Id = 48778, MEStartPress = 27.4, MEControlPress = 6.9, ExhaustValuePress = 6.9, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COMPRESSEDAIRSUPPLY" } },
+							CoolingFreshWater = new List<CoolingFreshWaterDto>() { new CoolingFreshWaterDto { Id = 59244, LTCFWPress = 2.3, CCLTCFWOutTemp = 12.2, LTCFW1Press = null, LTCFW2Press = null, LTCFW3Press = null, MEJWCOutPress = null, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COOLINGFRESHWATER" } },
+							CoolingSeaWater = new List<CoolingSeaWaterDto>() { new CoolingSeaWaterDto { Id = 47539, CSWOutPress = 2.3, CSWOutTemp = 2.3, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COOLINGSEAWATER" } },
+							CoolingWater = new List<CoolingWaterDto>() { new CoolingWaterDto { Id = 51635, MEJacketInPress = 4.1, MEPressDrop = 1.8, MEOutPress = 2.5, MEJacketPressDrop = 1.8, MEInTemp = 84, MEJacketCyl1OutTemp = 82, MEJacketCyl2OutTemp = 83, MEJacketCyl3OutTemp = 83, MEJacketCyl4OutTemp = 83, MEJacketCyl5OutTemp = 83, MEJacketCyl6OutTemp = 83, MECCCyl1OutTemp = 84, MECCCyl2OutTemp = 84, MECCCyl3OutTemp = 83, MECCCyl4OutTemp = 84, MECCCyl5OutTemp = 84, MECCCyl6OutTemp = 84, MEACInPress = 2.2, MEACInTemp = 36, MEACOutTemp = 36, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COOLINGWATER" } },
+							CylinderLubOil = new List<CylinderLubOilDto>() { new CylinderLubOilDto { Id = 56253, MEInTemp = 42.7003550613796, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "CYLINDERLUBOIL" } },
+							ExhaustGas = new List<ExhaustGasDto>() { new ExhaustGasDto { Id = 51016, METCInTemp = 139, MECyl1AfterTemp = null, MECyl2AfterTemp = null, MECyl3AfterTemp = null, MECyl4AfterTemp = null, MECyl5AfterTemp = null, MECyl6AfterTemp = null, METCOutTemp = 130, MEReceiverPress = 0.1, METurbBackPress = 0, MEACInTemp = 25, MEACOutTemp = 36, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "EXHAUSTGAS", MECyl1AfterTempDev = -8, MECyl2AfterTempDev = -5, MECyl3AfterTempDev = -5, MECyl4AfterTempDev = 3, MECyl5AfterTempDev = 8, MECyl6AfterTempDev = 6 } },
+							FO = new List<FODto>() { new FODto { Id = 52551, MEInPressure = 8.1, MEInTemp = 35, MEHPOPLeakage = 0, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "FOS" } },
+							FOSupplyUnit = new List<FOSupplyUnitDto>() { new FOSupplyUnitDto { Id = 46281, HFOService = 1, DGOService = 1, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "FOSUPPLYUNIT" } },
+							LubOilPurifying = new List<LubOilPurifyingDto>() { new LubOilPurifyingDto { Id = 45732, MEFilterPressHigh = 0, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "LUBOILPURIFYING" } },
+							LubOil = new List<LubOilDto>() { new LubOilDto { Id = 49594, METCInPress = 2.1, METBSTemp = 46, MEMBTBInPress = 2.1, MEPistonCOInPress = 2.1, MEInTemp = 46, MECYL1PistonCOOutTemp = 47, MECYL2PistonCOOutTemp = 47, MECYL3PistonCOOutTemp = 47, MECYL4PistonCOOutTemp = 47, MECYL5PistonCOOutTemp = 47, MECYL6PistonCOOutTemp = 47, MECYL1PistonCOOutNoFlow = 0, MECYL2PistonCOOutNoFlow = 0, MECYL3PistonCOOutNoFlow = 0, MECYL4PistonCOOutNoFlow = 0, MECYL5PistonCOOutNoFlow = 0, MECYL6PistonCOOutNoFlow = 0, METCOutTemp = 47, MEWaterHigh = 0, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "LUBOIL" } },
+							MainGeneratorSet = new List<MainGeneratorSetDto>() { new MainGeneratorSetDto { Id = 160136, DGCFWInPress = 0.2, DGStartAirPress = 2.8, DGLOPress = 0.5, DGLOInTemp = 944.2, DGCFWOutTemp = 78, DGEGTC1To3InTemp = 366, DGEGTC4To6InTemp = 362, DGEngineSpeed = 902, DGEngineLoad = 206, DGEngineRunHour = 110, DGLOInPress = 0, DGLOFilterInPress = 0, DGControlAirPress = 0, DGTCLOPress = 0, DGEngineRunning = 1, DGUTemp = 39.3, DGVTemp = 39.4, DGWTemp = 37.9, DGBTDTemp = 40.1, DGCyl1ExTemp = 276, DGCyl2ExTemp = 284, DGCyl3ExTemp = 272, DGCyl4ExTemp = 284, DGCyl5ExTemp = 277, DGCyl6ExTemp = 268, DGTCEXOutTemp = 296, DGBoostAirPress = 0.1, DGFOInPress = 0.8, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINGENERATORSET1" }, new MainGeneratorSetDto { Id = 160134, DGCFWInPress = 0.1, DGStartAirPress = 2.7, DGLOPress = 0.1, DGLOInTemp = 37, DGCFWOutTemp = 69, DGEGTC1To3InTemp = 20, DGEGTC4To6InTemp = 23, DGEngineSpeed = 0, DGEngineLoad = 0, DGEngineRunHour = 11, DGLOInPress = 0, DGLOFilterInPress = 0, DGControlAirPress = 0, DGTCLOPress = 0, DGEngineRunning = 0, DGUTemp = 17.1, DGVTemp = 17.2, DGWTemp = 17.5, DGBTDTemp = 18.2, DGCyl1ExTemp = 66, DGCyl2ExTemp = 67, DGCyl3ExTemp = 67, DGCyl4ExTemp = 68, DGCyl5ExTemp = 68, DGCyl6ExTemp = 67, DGTCEXOutTemp = 17, DGBoostAirPress = 0, DGFOInPress = 0.7, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINGENERATORSET2" }, new MainGeneratorSetDto { Id = 160135, DGCFWInPress = 0.2, DGStartAirPress = 2.7, DGLOPress = 0.5, DGLOInTemp = 57, DGCFWOutTemp = 78, DGEGTC1To3InTemp = 366, DGEGTC4To6InTemp = 356, DGEngineSpeed = 902, DGEngineLoad = 193, DGEngineRunHour = 17, DGLOInPress = 0, DGLOFilterInPress = 0, DGControlAirPress = 0, DGTCLOPress = 0, DGEngineRunning = 1, DGUTemp = 39.2, DGVTemp = 38.7, DGWTemp = 37.4, DGBTDTemp = 38, DGCyl1ExTemp = 279, DGCyl2ExTemp = 294, DGCyl3ExTemp = 283, DGCyl4ExTemp = 277, DGCyl5ExTemp = 282, DGCyl6ExTemp = 291, DGTCEXOutTemp = 296, DGBoostAirPress = 0.1, DGFOInPress = 0.7, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINGENERATORSET3" } },
+							MainSwitchboard = new List<MainSwitchboardDto>() { new MainSwitchboardDto { Id = 162352, MBVoltageHigh = 0, MBVoltageLow = 0, MBFrequencyHigh = 0, MBFrequencyLow = 0, DGRunning = 1, DGPower = 208, DGVoltageL1L2 = 449.6, DGVoltageL2L3 = 449.7, DGVoltageL3L1 = 449.7, DGCurrentL1 = 326.3, DGCurrentL2 = 328.8, DGCurrentL3 = 328.5, DGFrequency = 60.1, DGPowerFactor = 0.8, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINSWITCHBOARD1" }, new MainSwitchboardDto { Id = 162353, MBVoltageHigh = 0, MBVoltageLow = 0, MBFrequencyHigh = 0, MBFrequencyLow = 0, DGRunning = 0, DGPower = 0, DGVoltageL1L2 = 0, DGVoltageL2L3 = 0, DGVoltageL3L1 = 0, DGCurrentL1 = 0, DGCurrentL2 = 0, DGCurrentL3 = 0, DGFrequency = 0, DGPowerFactor = 1, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINSWITCHBOARD2" }, new MainSwitchboardDto { Id = 162354, MBVoltageHigh = 0, MBVoltageLow = 0, MBFrequencyHigh = 0, MBFrequencyLow = 0, DGRunning = 1, DGPower = 190.1, DGVoltageL1L2 = 449.9, DGVoltageL2L3 = 450.1, DGVoltageL3L1 = 449.8, DGCurrentL1 = 310.8, DGCurrentL2 = 313.3, DGCurrentL3 = 313.3, DGFrequency = 60.1, DGPowerFactor = 0.7, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINSWITCHBOARD3" } },
+							MERemoteControl = new List<MERemoteControlDto>() { new MERemoteControlDto { Id = 53212, MERpm = -0.5, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MEREMOTECONTROL" } },
+							Miscellaneous = new List<MiscellaneousDto>() { new MiscellaneousDto { Id = 53398, MECCOMHigh = 0, MEAxialVibration = 0.6, MELoad = 0, METCSpeed = 327.68, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MISCELLANEOUS" } },
+							ScavengeAir = new List<ScavengeAirDto>() { new ScavengeAirDto { Id = 51091, MEReceiverTemp = 43, MEFBCyl1Temp = 43, MEFBCyl2Temp = 44, MEFBCyl3Temp = 45, MEFBCyl4Temp = 44, MEFBCyl5Temp = 44, MEFBCyl6Temp = 45, MEPress = 0.1, MECoolerPressDrop = 0, METCInTempA = 26, METCInTempB = 26, ERRelativeHumidity = 34, ERTemp = 14, ERAmbientPress = 1030.8, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "SCAVENGEAIR" } },
+							ShaftClutch = new List<ShaftClutchDto>() { new ShaftClutchDto { Id = 53235, SternAftTemp = 21, InterTemp = 31, Uploaded = 0, Number = "SAD1", ReceiveDatetime = DateTime.UtcNow, DeviceNo = "SHAFTCLUTCH" } },
 						};
 						break;
 
@@ -1102,7 +1102,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
 			else if (request.Method == "map")
 			{
 				var voyageListResponse = new VoyageInfoListResp();
-				var deviceNo = "NDY1273";
+				var deviceNo = "SAD1";
 				var hasLoadStatus = false;
 				var queryParams = request.Parameters.ToJObject();
 				if (queryParams.ContainsKey("number") && !string.IsNullOrWhiteSpace(queryParams["number"].ToString()))

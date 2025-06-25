@@ -109,7 +109,7 @@ namespace hmt_energy_csharp.Services
             //开始发送机舱数据
             Task.Run(async () =>
             {
-                var SN = "NDY1273";
+                var SN = "SAD1";
                 while (!tabletUdpClient._stop)
                 {
                     try
@@ -338,7 +338,7 @@ namespace hmt_energy_csharp.Services
             // 打开中央处理单元掉线监测
             Task.Factory.StartNew(async () =>
             {
-                var number = "NDY1273";
+                var number = "SAD1";
                 while (true)
                 {
                     if (StaticEntities.StaticEntities.MonitoredDevices.Any(t => t.Number == number))
@@ -435,7 +435,7 @@ namespace hmt_energy_csharp.Services
                     {
                         await Task.Delay(1000 * 60);
 
-                        var vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == "NDY1273");
+                        var vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == "SAD1");
                         if (vessel == null)
                             continue;
 
@@ -859,7 +859,7 @@ namespace hmt_energy_csharp.Services
                             {
                                 var tempAssistantDecisionDtos = adsFromTablet;
 
-                                var curAssistantDecisionDtos = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == "NDY1273").AssistantDecisionDtos;
+                                var curAssistantDecisionDtos = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == "SAD1").AssistantDecisionDtos;
 
                                 foreach (var dto in tempAssistantDecisionDtos)
                                 {
@@ -876,11 +876,11 @@ namespace hmt_energy_csharp.Services
                                             Key = dto.Key,
                                             Content = dto.Content,
                                             State = dto.State,
-                                            Number = "NDY1273"
+                                            Number = "SAD1"
                                         });
                                     }
                                 }
-                                StaticEntities.ShowEntities.AssistantDecisions[StaticEntities.ShowEntities.AssistantDecisions.IndexOf(StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == "NDY1273"))].AssistantDecisionDtos = StaticEntities.StaticEntities.AssistantDecisions.FirstOrDefault(t => t.Number == "NDY1273").AssistantDecisionDtos = curAssistantDecisionDtos;
+                                StaticEntities.ShowEntities.AssistantDecisions[StaticEntities.ShowEntities.AssistantDecisions.IndexOf(StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == "SAD1"))].AssistantDecisionDtos = StaticEntities.StaticEntities.AssistantDecisions.FirstOrDefault(t => t.Number == "SAD1").AssistantDecisionDtos = curAssistantDecisionDtos;
 
                                 msgFromTabletIndex.Clear();
                                 adsFromTablet.Clear();

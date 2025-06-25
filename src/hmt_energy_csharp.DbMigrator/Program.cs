@@ -14,13 +14,10 @@ internal class Program
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
             .MinimumLevel.Override("Volo.Abp", LogEventLevel.Warning)
-#if DEBUG
-                .MinimumLevel.Override("hmt_energy_csharp", LogEventLevel.Debug)
-#else
-                .MinimumLevel.Override("hmt_energy_csharp", LogEventLevel.Information)
-#endif
-                .Enrich.FromLogContext()
+            .MinimumLevel.Override("hmt_energy_csharp", LogEventLevel.Debug)
+            .Enrich.FromLogContext()
             .WriteTo.Async(c => c.File("Logs/logs.txt"))
             .WriteTo.Async(c => c.Console())
             .CreateLogger();
