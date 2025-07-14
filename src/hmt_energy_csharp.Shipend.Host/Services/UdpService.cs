@@ -321,6 +321,69 @@ namespace hmt_energy_csharp.Services
                             ArrayPool<byte>.Shared.Return(buffer);
                         }
                     });
+
+                    Task.Run(async () =>
+                    {
+                        #region 实时数据通过ws上传云端
+
+                        try
+                        {
+                            var number = "SAD1";
+                            var rtInfos = new
+                            {
+                                vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == number),
+                                flowmeter = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == number),
+                                battery = StaticEntities.ShowEntities.Batteries.FirstOrDefault(t => t.Number == number),
+                                generator = StaticEntities.ShowEntities.Generators.FirstOrDefault(t => t.Number == number),
+                                liquidLevel = StaticEntities.ShowEntities.LiquidLevels.FirstOrDefault(t => t.Number == number),
+                                supplyUnit = StaticEntities.ShowEntities.SupplyUnits.FirstOrDefault(t => t.Number == number),
+                                shaft = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == number),
+                                sternSealing = StaticEntities.ShowEntities.SternSealings.FirstOrDefault(t => t.Number == number),
+                                powerUnit = StaticEntities.ShowEntities.PowerUnits.FirstOrDefault(t => t.Number == number),
+                                totalIndicator = StaticEntities.ShowEntities.TotalIndicators.FirstOrDefault(t => t.Number == number),
+                                prediction = StaticEntities.ShowEntities.Predictions.FirstOrDefault(t => t.Number == number),
+                                AssistantDecisions = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number),
+                                CompositeBoilers = StaticEntities.ShowEntities.CompositeBoilers.FirstOrDefault(t => t.Number == number),
+                                CompressedAirSupplies = StaticEntities.ShowEntities.CompressedAirSupplies.FirstOrDefault(t => t.Number == number),
+                                CoolingFreshWaters = StaticEntities.ShowEntities.CoolingFreshWaters.FirstOrDefault(t => t.Number == number),
+                                CoolingSeaWaters = StaticEntities.ShowEntities.CoolingSeaWaters.FirstOrDefault(t => t.Number == number),
+                                CoolingWaters = StaticEntities.ShowEntities.CoolingWaters.FirstOrDefault(t => t.Number == number),
+                                CylinderLubOils = StaticEntities.ShowEntities.CylinderLubOils.FirstOrDefault(t => t.Number == number),
+                                ExhaustGases = StaticEntities.ShowEntities.ExhaustGases.FirstOrDefault(t => t.Number == number),
+                                FOs = StaticEntities.ShowEntities.FOs.FirstOrDefault(t => t.Number == number),
+                                FOSupplyUnits = StaticEntities.ShowEntities.FOSupplyUnits.FirstOrDefault(t => t.Number == number),
+                                LubOilPurifyings = StaticEntities.ShowEntities.LubOilPurifyings.FirstOrDefault(t => t.Number == number),
+                                LubOils = StaticEntities.ShowEntities.LubOils.FirstOrDefault(t => t.Number == number),
+                                MainGeneratorSets = StaticEntities.ShowEntities.MainGeneratorSets.FirstOrDefault(t => t.Number == number),
+                                MainSwitchboards = StaticEntities.ShowEntities.MainSwitchboards.FirstOrDefault(t => t.Number == number),
+                                MERemoteControls = StaticEntities.ShowEntities.MERemoteControls.FirstOrDefault(t => t.Number == number),
+                                Miscellaneouses = StaticEntities.ShowEntities.Miscellaneouses.FirstOrDefault(t => t.Number == number),
+                                ScavengeAirs = StaticEntities.ShowEntities.ScavengeAirs.FirstOrDefault(t => t.Number == number),
+                                ShaftClutchs = StaticEntities.ShowEntities.ShaftClutchs.FirstOrDefault(t => t.Number == number),
+                            };
+                            while (true)
+                            {
+                                if (ClientWebSocket.State == WebSocketState.Open)
+                                {
+                                    try
+                                    {
+                                        await ClientWebSocket.SendAsync(Encoding.UTF8.GetBytes(rtInfos.ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _logger.LogError(ex, "实时数据通过ws发送云端失败。");
+                                    }
+                                }
+                                await Task.Delay(10 * 1000);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "实时数据上云初始化数据失败。");
+                        }
+
+                        #endregion 实时数据通过ws上传云端
+                    }, CancellationToken.None);
                 }
                 else
                 {
@@ -616,54 +679,6 @@ namespace hmt_energy_csharp.Services
                             await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eems", content = result.LogContents, shipId = shipId, level = level }).ToJson() + "$warningInfoEn$" + (new { category = "eems", content = result.LogContentsEn, shipId = shipId, level = level }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
                         }
                     }
-
-                    #region 实时数据通过ws上传云端
-
-                    try
-                    {
-                        if (ClientWebSocket.State == WebSocketState.Open)
-                        {
-                            var rtInfos = new
-                            {
-                                vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == number),
-                                flowmeter = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == number),
-                                battery = StaticEntities.ShowEntities.Batteries.FirstOrDefault(t => t.Number == number),
-                                generator = StaticEntities.ShowEntities.Generators.FirstOrDefault(t => t.Number == number),
-                                liquidLevel = StaticEntities.ShowEntities.LiquidLevels.FirstOrDefault(t => t.Number == number),
-                                supplyUnit = StaticEntities.ShowEntities.SupplyUnits.FirstOrDefault(t => t.Number == number),
-                                shaft = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == number),
-                                sternSealing = StaticEntities.ShowEntities.SternSealings.FirstOrDefault(t => t.Number == number),
-                                powerUnit = StaticEntities.ShowEntities.PowerUnits.FirstOrDefault(t => t.Number == number),
-                                totalIndicator = StaticEntities.ShowEntities.TotalIndicators.FirstOrDefault(t => t.Number == number),
-                                prediction = StaticEntities.ShowEntities.Predictions.FirstOrDefault(t => t.Number == number),
-                                AssistantDecisions = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number),
-                                CompositeBoilers = StaticEntities.ShowEntities.CompositeBoilers.FirstOrDefault(t => t.Number == number),
-                                CompressedAirSupplies = StaticEntities.ShowEntities.CompressedAirSupplies.FirstOrDefault(t => t.Number == number),
-                                CoolingFreshWaters = StaticEntities.ShowEntities.CoolingFreshWaters.FirstOrDefault(t => t.Number == number),
-                                CoolingSeaWaters = StaticEntities.ShowEntities.CoolingSeaWaters.FirstOrDefault(t => t.Number == number),
-                                CoolingWaters = StaticEntities.ShowEntities.CoolingWaters.FirstOrDefault(t => t.Number == number),
-                                CylinderLubOils = StaticEntities.ShowEntities.CylinderLubOils.FirstOrDefault(t => t.Number == number),
-                                ExhaustGases = StaticEntities.ShowEntities.ExhaustGases.FirstOrDefault(t => t.Number == number),
-                                FOs = StaticEntities.ShowEntities.FOs.FirstOrDefault(t => t.Number == number),
-                                FOSupplyUnits = StaticEntities.ShowEntities.FOSupplyUnits.FirstOrDefault(t => t.Number == number),
-                                LubOilPurifyings = StaticEntities.ShowEntities.LubOilPurifyings.FirstOrDefault(t => t.Number == number),
-                                LubOils = StaticEntities.ShowEntities.LubOils.FirstOrDefault(t => t.Number == number),
-                                MainGeneratorSets = StaticEntities.ShowEntities.MainGeneratorSets.FirstOrDefault(t => t.Number == number),
-                                MainSwitchboards = StaticEntities.ShowEntities.MainSwitchboards.FirstOrDefault(t => t.Number == number),
-                                MERemoteControls = StaticEntities.ShowEntities.MERemoteControls.FirstOrDefault(t => t.Number == number),
-                                Miscellaneouses = StaticEntities.ShowEntities.Miscellaneouses.FirstOrDefault(t => t.Number == number),
-                                ScavengeAirs = StaticEntities.ShowEntities.ScavengeAirs.FirstOrDefault(t => t.Number == number),
-                                ShaftClutchs = StaticEntities.ShowEntities.ShaftClutchs.FirstOrDefault(t => t.Number == number),
-                            };
-                            await ClientWebSocket.SendAsync(Encoding.UTF8.GetBytes(rtInfos.ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "实时数据通过ws发送云端失败。");
-                    }
-
-                    #endregion 实时数据通过ws上传云端
                 }
                 else if (receiveMsg[0].Equals('|') && receiveMsg[receiveMsg.Length - 4].Equals('*'))
                 {
