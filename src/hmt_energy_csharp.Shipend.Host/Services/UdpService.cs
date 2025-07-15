@@ -84,7 +84,7 @@ namespace hmt_energy_csharp.Services
             #region 启动平板UDP客户端
 
             tabletUdpClient = new TabletUdpClient(_configuration.GetSection("UdpTabletClient")["Address"], Convert.ToInt32(_configuration.GetSection("UdpTabletClient")["Port"]));
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 while (!tabletUdpClient._stop)
                 {
@@ -104,10 +104,10 @@ namespace hmt_energy_csharp.Services
                     }
                     await Task.Delay(30 * 1000);
                 }
-            });
+            }, cancellationToken);
 
             //开始发送机舱数据
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 var SN = "SAD1";
                 while (!tabletUdpClient._stop)
@@ -193,7 +193,7 @@ namespace hmt_energy_csharp.Services
                     }
                     await Task.Delay(10 * 1000);
                 }
-            });
+            }, cancellationToken);
 
             #endregion 启动平板UDP客户端
 
