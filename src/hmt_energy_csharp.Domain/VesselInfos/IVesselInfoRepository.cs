@@ -25,5 +25,9 @@ namespace hmt_energy_csharp.VesselInfos
         Task<VesselInfo> GetDepartureAsync(string number, DateTimeOffset dateTimeOffset);
 
         Task<IEnumerable<object>> QueryFromSql(string sql);
+
+        Task<IEnumerable<T>> QueryFromSql<T>(string sql);
+
+        Task<AllInfo> GetLatestInfosAsync(string number, DateTime receiveDatetime);
     }
 }

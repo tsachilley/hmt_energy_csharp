@@ -41,6 +41,8 @@ namespace hmt_energy_csharp.VesselInfos
 
         Task<VesselInfoDto> GetLatestAsync(string number);
 
+        Task GetLatestInfosAsync(string number, DateTime receiveDatetime);
+
         Task<IList<VesselInfoDto>> GetListChart(string number, string parameters);
 
         Task<IList<MapDto>> GetListMap(string number, string parameters);
