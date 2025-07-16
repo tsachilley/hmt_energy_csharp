@@ -1,4 +1,32 @@
 using Dapper;
+using hmt_energy_csharp.Energy.Batteries;
+using hmt_energy_csharp.Energy.Flowmeters;
+using hmt_energy_csharp.Energy.Generators;
+using hmt_energy_csharp.Energy.LiquidLevels;
+using hmt_energy_csharp.Energy.PowerUnits;
+using hmt_energy_csharp.Energy.Predictions;
+using hmt_energy_csharp.Energy.Shafts;
+using hmt_energy_csharp.Energy.SternSealings;
+using hmt_energy_csharp.Energy.SupplyUnits;
+using hmt_energy_csharp.Energy.TotalIndicators;
+using hmt_energy_csharp.Engineroom.AssistantDecisions;
+using hmt_energy_csharp.Engineroom.CompositeBoilers;
+using hmt_energy_csharp.Engineroom.CompressedAirSupplies;
+using hmt_energy_csharp.Engineroom.CoolingFreshWaters;
+using hmt_energy_csharp.Engineroom.CoolingSeaWaters;
+using hmt_energy_csharp.Engineroom.CoolingWaters;
+using hmt_energy_csharp.Engineroom.CylinderLubOils;
+using hmt_energy_csharp.Engineroom.ExhaustGases;
+using hmt_energy_csharp.Engineroom.FOs;
+using hmt_energy_csharp.Engineroom.FOSupplyUnits;
+using hmt_energy_csharp.Engineroom.LubOilPurifyings;
+using hmt_energy_csharp.Engineroom.LubOils;
+using hmt_energy_csharp.Engineroom.MainGeneratorSets;
+using hmt_energy_csharp.Engineroom.MainSwitchboards;
+using hmt_energy_csharp.Engineroom.MERemoteControls;
+using hmt_energy_csharp.Engineroom.Miscellaneouses;
+using hmt_energy_csharp.Engineroom.ScavengeAirs;
+using hmt_energy_csharp.Engineroom.ShaftClutches;
 using hmt_energy_csharp.EntityFrameworkCore.Oracle;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -207,6 +235,116 @@ namespace hmt_energy_csharp.VesselInfos
                     connection.Open();
                 }
                 return await connection.QueryAsync(sql);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, MethodBase.GetCurrentMethod().DeclaringType.FullName);
+                return null;
+            }
+            finally
+            {
+                if (needClose)
+                    connection.Close();
+            }
+        }
+
+        public async Task<IEnumerable<T>> QueryFromSql<T>(string sql)
+        {
+            var connection = await GetDbConnectionAsync();
+            var needClose = false;
+            try
+            {
+                if (connection.State == ConnectionState.Closed)
+                {
+                    needClose = true;
+                    connection.Open();
+                }
+                return await connection.QueryAsync<T>(sql);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, MethodBase.GetCurrentMethod().DeclaringType.FullName);
+                return null;
+            }
+            finally
+            {
+                if (needClose)
+                    connection.Close();
+            }
+        }
+
+        public async Task<AllInfo> GetLatestInfosAsync(string number, DateTime receiveDatetime)
+        {
+            var connection = await GetDbConnectionAsync();
+            var needClose = false;
+            try
+            {
+                if (connection.State == ConnectionState.Closed)
+                {
+                    needClose = true;
+                    connection.Open();
+                }
+                var flowmeters = (await connection.QueryAsync<Flowmeter>($"SELECT * FROM \"energy_flowmeter\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var batteries = (await connection.QueryAsync<Battery>($"SELECT * FROM \"energy_battery\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var generators = (await connection.QueryAsync<Generator>($"SELECT * FROM \"energy_generator\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var liquidlevels = (await connection.QueryAsync<LiquidLevel>($"SELECT * FROM \"energy_liquidlevel\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var powerunits = (await connection.QueryAsync<PowerUnit>($"SELECT * FROM \"energy_powerunit\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var predictions = (await connection.QueryAsync<Prediction>($"SELECT * FROM \"energy_prediction\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var shafts = (await connection.QueryAsync<Shaft>($"SELECT * FROM \"energy_shaft\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var sternsealings = (await connection.QueryAsync<SternSealing>($"SELECT * FROM \"energy_sternsealing\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var supplyunits = (await connection.QueryAsync<SupplyUnit>($"SELECT * FROM \"energy_supplyunit\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var totalindicators = (await connection.QueryAsync<TotalIndicator>($"SELECT * FROM \"energy_totalindicator\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var assistantdecisions = (await connection.QueryAsync<AssistantDecision>($"SELECT * FROM \"engineroom_assistantdecision\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var compositeboilers = (await connection.QueryAsync<CompositeBoiler>($"SELECT * FROM \"engineroom_compositeboiler\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var compressedairsupplies = (await connection.QueryAsync<CompressedAirSupply>($"SELECT * FROM \"engineroom_compressedairsupply\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var coolingfreshwaters = (await connection.QueryAsync<CoolingFreshWater>($"SELECT * FROM \"engineroom_coolingfreshwater\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var coolingseawaters = (await connection.QueryAsync<CoolingSeaWater>($"SELECT * FROM \"engineroom_coolingseawater\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var coolingwaters = (await connection.QueryAsync<CoolingWater>($"SELECT * FROM \"engineroom_coolingwater\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var cylinderluboils = (await connection.QueryAsync<CylinderLubOil>($"SELECT * FROM \"engineroom_cylinderluboil\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var exhaustgases = (await connection.QueryAsync<ExhaustGas>($"SELECT * FROM \"engineroom_exhaustgas\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var fos = (await connection.QueryAsync<FO>($"SELECT * FROM \"engineroom_fo\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var fosupplyunits = (await connection.QueryAsync<FOSupplyUnit>($"SELECT * FROM \"engineroom_fosupplyunit\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var luboils = (await connection.QueryAsync<LubOil>($"SELECT * FROM \"engineroom_luboil\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var luboilpurifyings = (await connection.QueryAsync<LubOilPurifying>($"SELECT * FROM \"engineroom_luboilpurifying\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var maingeneratorsets = (await connection.QueryAsync<MainGeneratorSet>($"SELECT * FROM \"engineroom_maingeneratorset\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var mainswitchboards = (await connection.QueryAsync<MainSwitchboard>($"SELECT * FROM \"engineroom_mainswitchboard\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var meremotecontrols = (await connection.QueryAsync<MERemoteControl>($"SELECT * FROM \"engineroom_meremotecontrol\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var miscellaneous = (await connection.QueryAsync<Miscellaneous>($"SELECT * FROM \"engineroom_miscellaneous\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var scavengeairs = (await connection.QueryAsync<ScavengeAir>($"SELECT * FROM \"engineroom_scavengeair\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+                var shaftclutches = (await connection.QueryAsync<ShaftClutch>($"SELECT * FROM \"engineroom_shaftclutch\" WHERE \"Number\"='{number}' AND TO_CHAR(\"ReceiveDatetime\",'YYYY-MM-DD HH24:MI:SS')='{receiveDatetime.ToString("yyyy-MM-dd HH:mm:ss")}'")).ToList();
+
+                var result = new AllInfo()
+                {
+                    flowmeters = flowmeters,
+                    batteries = batteries,
+                    generators = generators,
+                    liquidlevels = liquidlevels,
+                    powerunits = powerunits,
+                    predictions = predictions,
+                    shafts = shafts,
+                    sternsealings = sternsealings,
+                    supplyunits = supplyunits,
+                    totalindicators = totalindicators,
+                    assistantdecisions = assistantdecisions,
+                    compositeboilers = compositeboilers,
+                    compressedairsupplies = compressedairsupplies,
+                    coolingfreshwaters = coolingfreshwaters,
+                    coolingseawaters = coolingseawaters,
+                    coolingwaters = coolingwaters,
+                    cylinderluboils = cylinderluboils,
+                    exhaustgases = exhaustgases,
+                    fos = fos,
+                    fosupplyunits = fosupplyunits,
+                    luboils = luboils,
+                    luboilpurifyings = luboilpurifyings,
+                    maingeneratorsets = maingeneratorsets,
+                    mainswitchboards = mainswitchboards,
+                    meremotecontrols = meremotecontrols,
+                    miscellaneous = miscellaneous,
+                    scavengeairs = scavengeairs,
+                    shaftclutches = shaftclutches
+                };
+                return result;
             }
             catch (Exception ex)
             {

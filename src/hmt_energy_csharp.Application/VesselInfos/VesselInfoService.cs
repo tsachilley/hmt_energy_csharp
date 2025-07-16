@@ -170,6 +170,47 @@ namespace hmt_energy_csharp.VesselInfos
             }
         }
 
+        public async Task GetLatestInfosAsync(string number, DateTime receiveDatetime)
+        {
+            try
+            {
+                var result = await _repository.GetLatestInfosAsync(number, receiveDatetime);
+
+                StaticEntities.ShowEntities.Flowmeters.Add(new VesselFlowmeterDto { Number = number, FlowmeterDtos = ObjectMapper.Map<IList<Flowmeter>, IList<FlowmeterDto>>(result.flowmeters) });
+                StaticEntities.ShowEntities.Batteries.Add(new VesselBatteryDto { Number = number, BatteryDtos = ObjectMapper.Map<IList<Battery>, IList<BatteryDto>>(result.batteries) });
+                StaticEntities.ShowEntities.Generators.Add(new VesselGeneratorDto { Number = number, GeneratorDtos = ObjectMapper.Map<IList<Generator>, IList<GeneratorDto>>(result.generators) });
+                StaticEntities.ShowEntities.LiquidLevels.Add(new VesselLiquidLevelDto { Number = number, LiquidLevelDtos = ObjectMapper.Map<IList<LiquidLevel>, IList<LiquidLevelDto>>(result.liquidlevels) });
+                StaticEntities.ShowEntities.SupplyUnits.Add(new VesselSupplyUnitDto { Number = number, SupplyUnitDtos = ObjectMapper.Map<IList<SupplyUnit>, IList<SupplyUnitDto>>(result.supplyunits) });
+                StaticEntities.ShowEntities.Shafts.Add(new VesselShaftDto { Number = number, ShaftDtos = ObjectMapper.Map<IList<Shaft>, IList<ShaftDto>>(result.shafts) });
+                StaticEntities.ShowEntities.SternSealings.Add(new VesselSternSealingDto { Number = number, SternSealingDtos = ObjectMapper.Map<IList<SternSealing>, IList<SternSealingDto>>(result.sternsealings) });
+                StaticEntities.ShowEntities.PowerUnits.Add(new VesselPowerUnitDto { Number = number, PowerUnitDtos = ObjectMapper.Map<IList<PowerUnit>, IList<PowerUnitDto>>(result.powerunits) });
+                StaticEntities.ShowEntities.TotalIndicators.Add(ObjectMapper.Map<IList<TotalIndicator>, IList<TotalIndicatorDto>>(result.totalindicators).FirstOrDefault());
+                StaticEntities.ShowEntities.Predictions.Add(ObjectMapper.Map<IList<Prediction>, IList<PredictionDto>>(result.predictions).FirstOrDefault());
+                StaticEntities.ShowEntities.AssistantDecisions.Add(new VesselAssistantDecisionDto { Number = number, AssistantDecisionDtos = ObjectMapper.Map<IList<AssistantDecision>, IList<AssistantDecisionDto>>(result.assistantdecisions) });
+                StaticEntities.ShowEntities.CompositeBoilers.Add(new VesselCompositeBoilerDto { Number = number, CompositeBoilerDtos = ObjectMapper.Map<IList<CompositeBoiler>, IList<CompositeBoilerDto>>(result.compositeboilers) });
+                StaticEntities.ShowEntities.CompressedAirSupplies.Add(new VesselCompressedAirSupplyDto { Number = number, CompressedAirSupplyDtos = ObjectMapper.Map<IList<CompressedAirSupply>, IList<CompressedAirSupplyDto>>(result.compressedairsupplies) });
+                StaticEntities.ShowEntities.CoolingFreshWaters.Add(new VesselCoolingFreshWaterDto { Number = number, CoolingFreshWaterDtos = ObjectMapper.Map<IList<CoolingFreshWater>, IList<CoolingFreshWaterDto>>(result.coolingfreshwaters) });
+                StaticEntities.ShowEntities.CoolingSeaWaters.Add(new VesselCoolingSeaWaterDto { Number = number, CoolingSeaWaterDtos = ObjectMapper.Map<IList<CoolingSeaWater>, IList<CoolingSeaWaterDto>>(result.coolingseawaters) });
+                StaticEntities.ShowEntities.CoolingWaters.Add(new VesselCoolingWaterDto { Number = number, CoolingWaterDtos = ObjectMapper.Map<IList<CoolingWater>, IList<CoolingWaterDto>>(result.coolingwaters) });
+                StaticEntities.ShowEntities.CylinderLubOils.Add(new VesselCylinderLubOilDto { Number = number, CylinderLubOilDtos = ObjectMapper.Map<IList<CylinderLubOil>, IList<CylinderLubOilDto>>(result.cylinderluboils) });
+                StaticEntities.ShowEntities.ExhaustGases.Add(new VesselExhaustGasDto { Number = number, ExhaustGasDtos = ObjectMapper.Map<IList<ExhaustGas>, IList<ExhaustGasDto>>(result.exhaustgases) });
+                StaticEntities.ShowEntities.FOs.Add(new VesselFODto { Number = number, FODtos = ObjectMapper.Map<IList<FO>, IList<FODto>>(result.fos) });
+                StaticEntities.ShowEntities.FOSupplyUnits.Add(new VesselFOSupplyUnitDto { Number = number, FOSupplyUnitDtos = ObjectMapper.Map<IList<FOSupplyUnit>, IList<FOSupplyUnitDto>>(result.fosupplyunits) });
+                StaticEntities.ShowEntities.LubOilPurifyings.Add(new VesselLubOilPurifyingDto { Number = number, LubOilPurifyingDtos = ObjectMapper.Map<IList<LubOilPurifying>, IList<LubOilPurifyingDto>>(result.luboilpurifyings) });
+                StaticEntities.ShowEntities.LubOils.Add(new VesselLubOilDto { Number = number, LubOilDtos = ObjectMapper.Map<IList<LubOil>, IList<LubOilDto>>(result.luboils) });
+                StaticEntities.ShowEntities.MainGeneratorSets.Add(new VesselMainGeneratorSetDto { Number = number, MainGeneratorSetDtos = ObjectMapper.Map<IList<MainGeneratorSet>, IList<MainGeneratorSetDto>>(result.maingeneratorsets) });
+                StaticEntities.ShowEntities.MainSwitchboards.Add(new VesselMainSwitchboardDto { Number = number, MainSwitchboardDtos = ObjectMapper.Map<IList<MainSwitchboard>, IList<MainSwitchboardDto>>(result.mainswitchboards) });
+                StaticEntities.ShowEntities.MERemoteControls.Add(new VesselMERemoteControlDto { Number = number, MERemoteControlDtos = ObjectMapper.Map<IList<MERemoteControl>, IList<MERemoteControlDto>>(result.meremotecontrols) });
+                StaticEntities.ShowEntities.Miscellaneouses.Add(new VesselMiscellaneousDto { Number = number, MiscellaneousDtos = ObjectMapper.Map<IList<Miscellaneous>, IList<MiscellaneousDto>>(result.miscellaneous) });
+                StaticEntities.ShowEntities.ScavengeAirs.Add(new VesselScavengeAirDto { Number = number, ScavengeAirDtos = ObjectMapper.Map<IList<ScavengeAir>, IList<ScavengeAirDto>>(result.scavengeairs) });
+                StaticEntities.ShowEntities.ShaftClutchs.Add(new VesselShaftClutchDto { Number = number, ShaftClutchDtos = ObjectMapper.Map<IList<ShaftClutch>, IList<ShaftClutchDto>>(result.shaftclutches) });
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
         public async Task<IList<VesselInfoDto>> GetListChart(string number, string parameters)
         {
             var result = await _repository.GetListChart(number, parameters);
