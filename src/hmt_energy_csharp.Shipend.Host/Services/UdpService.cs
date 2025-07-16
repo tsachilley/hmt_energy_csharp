@@ -23,6 +23,7 @@ using hmt_energy_csharp.ProtocolDatas;
 using hmt_energy_csharp.Protos;
 using hmt_energy_csharp.ResponseResults;
 using hmt_energy_csharp.VDRs;
+using hmt_energy_csharp.VesselInfos;
 using hmt_energy_csharp.WhiteLists;
 using Jint;
 using Jint.Native;
@@ -61,10 +62,11 @@ namespace hmt_energy_csharp.Services
         private readonly DiagnosticsConfig _diagnosticsConfig;
         private readonly IProtocolDataService _protocolDataService;
         private readonly IConfigService _configService;
+        private readonly IVesselInfoService _vesselInfoService;
 
         public ClientWebSocket ClientWebSocket { get; set; }
 
-        public UdpService(IConfiguration configuration, IConsulService consulService, IWhiteListAppService whiteList, IVDRService vdrService, DiagnosticsConfig diagnosticsConfig, IProtocolDataService protocolDataService, IConfigService configService)
+        public UdpService(IConfiguration configuration, IConsulService consulService, IWhiteListAppService whiteList, IVDRService vdrService, DiagnosticsConfig diagnosticsConfig, IProtocolDataService protocolDataService, IConfigService configService, IVesselInfoService vesselInfoService)
         {
             _configuration = configuration;
             _consulService = consulService;
@@ -73,10 +75,51 @@ namespace hmt_energy_csharp.Services
             _diagnosticsConfig = diagnosticsConfig;
             _protocolDataService = protocolDataService;
             _configService = configService;
+            _vesselInfoService = vesselInfoService;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            #region 展示数据进行初始化
+            var number = _configuration["ShipInfo:SN"] ?? "SAD1";
+            //需单独初始化 否则不访问船端页面不会进行赋值
+            if (!StaticEntities.ShowEntities.Vessels.Any(t => t.SN == number))
+            {
+                var lastestVessel = await _vesselInfoService.GetLatestAsync(number);
+                StaticEntities.ShowEntities.Vessels.Add(lastestVessel);
+                StaticEntities.ShowEntities.Flowmeters.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Batteries.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Generators.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.LiquidLevels.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.SupplyUnits.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Shafts.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.SternSealings.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.PowerUnits.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.TotalIndicators.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Predictions.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.AssistantDecisions.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CompositeBoilers.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CompressedAirSupplies.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CoolingFreshWaters.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CoolingSeaWaters.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CoolingWaters.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CylinderLubOils.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.ExhaustGases.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.FOs.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.FOSupplyUnits.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.LubOilPurifyings.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.LubOils.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.MainGeneratorSets.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.MainSwitchboards.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.MERemoteControls.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Miscellaneouses.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.ScavengeAirs.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.ShaftClutchs.RemoveAll(t => t.Number == number);
+                await _vesselInfoService.GetLatestInfosAsync(lastestVessel.SN, lastestVessel.ReceiveDatetime);
+            }
+
+            #endregion
+
             udpServer = new EEUdpServer(IPAddress.Any, Convert.ToInt32(_configuration.GetSection("UdpServer")["Port"]), _consulService, _whiteList, _vdrService, _diagnosticsConfig, _protocolDataService, _configService, _configuration);
             udpServer?.Start();
             StaticEntities.StaticEntities.Configs = await _configService.GetList("{\"IsEnabled\":\"1\"}");
@@ -328,7 +371,7 @@ namespace hmt_energy_csharp.Services
 
                         try
                         {
-                            var number = "SAD1";
+                            var number = _configuration["ShipInfo:SN"] ?? "SAD1";
                             var rtInfos = new
                             {
                                 vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == number),
