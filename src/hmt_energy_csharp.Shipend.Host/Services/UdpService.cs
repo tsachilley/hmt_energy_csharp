@@ -82,6 +82,7 @@ namespace hmt_energy_csharp.Services
         {
             #region 展示数据进行初始化
             var number = _configuration["ShipInfo:SN"] ?? "SAD1";
+            var SN = number;
             //需单独初始化 否则不访问船端页面不会进行赋值
             if (!StaticEntities.ShowEntities.Vessels.Any(t => t.SN == number))
             {
@@ -126,7 +127,7 @@ namespace hmt_energy_csharp.Services
 
             #region 启动平板UDP客户端
 
-            tabletUdpClient = new TabletUdpClient(_configuration.GetSection("UdpTabletClient")["Address"], Convert.ToInt32(_configuration.GetSection("UdpTabletClient")["Port"]));
+            tabletUdpClient = new TabletUdpClient(_configuration.GetSection("UdpTabletClient")["Address"], Convert.ToInt32(_configuration.GetSection("UdpTabletClient")["Port"]), _configuration["ShipInfo:SN"] ?? "SAD1");
             _ = Task.Run(async () =>
             {
                 while (!tabletUdpClient._stop)
@@ -152,7 +153,6 @@ namespace hmt_energy_csharp.Services
             //开始发送机舱数据
             _ = Task.Run(async () =>
             {
-                var SN = "SAD1";
                 while (!tabletUdpClient._stop)
                 {
                     try
@@ -284,6 +284,7 @@ namespace hmt_energy_csharp.Services
 
         protected override void OnStarted()
         {
+            var number = _configuration["ShipInfo:SN"] ?? "SAD1";
             Log.Information($"{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UDP服务器信息=>{Endpoint}");
 
             // Start receive datagrams
@@ -444,7 +445,6 @@ namespace hmt_energy_csharp.Services
             // 打开中央处理单元掉线监测
             Task.Factory.StartNew(async () =>
             {
-                var number = "SAD1";
                 while (true)
                 {
                     if (StaticEntities.StaticEntities.MonitoredDevices.Any(t => t.Number == number))
@@ -503,6 +503,7 @@ namespace hmt_energy_csharp.Services
         //初始化eca、js 启动eca预警任务
         private void InitECA()
         {
+            var number = _configuration["ShipInfo:SN"] ?? "SAD1";
             try
             {
                 JECA = File.ReadAllText("Geo/ECA.json").ToJObject();
@@ -541,7 +542,7 @@ namespace hmt_energy_csharp.Services
                     {
                         await Task.Delay(1000 * 60);
 
-                        var vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == "SAD1");
+                        var vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == number);
                         if (vessel == null)
                             continue;
 
@@ -859,9 +860,11 @@ namespace hmt_energy_csharp.Services
     public class TabletUdpClient : UdpClient
     {
         public bool _stop;
+        public string number { get; set; }
 
-        public TabletUdpClient(string address, int port) : base(address, port)
+        public TabletUdpClient(string address, int port, string number) : base(address, port)
         {
+            this.number = number;
         }
 
         public void DisconnectAndStop()
@@ -917,7 +920,7 @@ namespace hmt_energy_csharp.Services
                             {
                                 var tempAssistantDecisionDtos = adsFromTablet;
 
-                                var curAssistantDecisionDtos = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == "SAD1").AssistantDecisionDtos;
+                                var curAssistantDecisionDtos = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number).AssistantDecisionDtos;
 
                                 foreach (var dto in tempAssistantDecisionDtos)
                                 {
@@ -934,11 +937,11 @@ namespace hmt_energy_csharp.Services
                                             Key = dto.Key,
                                             Content = dto.Content,
                                             State = dto.State,
-                                            Number = "SAD1"
+                                            Number = number
                                         });
                                     }
                                 }
-                                StaticEntities.ShowEntities.AssistantDecisions[StaticEntities.ShowEntities.AssistantDecisions.IndexOf(StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == "SAD1"))].AssistantDecisionDtos = StaticEntities.StaticEntities.AssistantDecisions.FirstOrDefault(t => t.Number == "SAD1").AssistantDecisionDtos = curAssistantDecisionDtos;
+                                StaticEntities.ShowEntities.AssistantDecisions[StaticEntities.ShowEntities.AssistantDecisions.IndexOf(StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number))].AssistantDecisionDtos = StaticEntities.StaticEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number).AssistantDecisionDtos = curAssistantDecisionDtos;
 
                                 msgFromTabletIndex.Clear();
                                 adsFromTablet.Clear();
