@@ -56,15 +56,22 @@ namespace hmt_energy_csharp.Services
                         {
                             while (CloudendReceive.State == WebSocketState.Open)
                             {
-                                var result = await CloudendReceive.ReceiveAsync(buffer, cancellationToken);
-                                if (result.MessageType == WebSocketMessageType.Close)
+                                try
                                 {
-                                    throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription);
+                                    var result = await CloudendReceive.ReceiveAsync(buffer, cancellationToken);
+                                    if (result.MessageType == WebSocketMessageType.Close)
+                                    {
+                                        throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription);
+                                    }
+                                    var text = Encoding.UTF8.GetString(buffer.AsSpan(0, result.Count));
+                                    var tempJO = JObject.Parse(text);
+                                    if (!tempJO.ContainsKey("code") || tempJO["code"].ToString() != "314008")
+                                        await Console.Out.WriteLineAsync(text);
                                 }
-                                var text = Encoding.UTF8.GetString(buffer.AsSpan(0, result.Count));
-                                var tempJO = JObject.Parse(text);
-                                if (!tempJO.ContainsKey("code") || tempJO["code"].ToString() != "314008")
-                                    await Console.Out.WriteLineAsync(text);
+                                catch (Exception ex)
+                                {
+                                    _logger.LogError(ex, "云端通过ws接收实时数据失败。");
+                                }
                             }
                         }
                         finally
