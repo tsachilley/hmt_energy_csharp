@@ -1282,11 +1282,11 @@ namespace hmt_energy_csharp.VesselInfos
                 number = queryParams["number"].ToString();
                 if (queryParams.ContainsKey("dateFrom") && !string.IsNullOrWhiteSpace(queryParams["dateFrom"].ToString()))
                 {
-                    dateFrom = Convert.ToDateTime(queryParams["dateFrom"].ToString()).ToUniversalTime();
+                    dateFrom = Convert.ToDateTime(queryParams["dateFrom"].ToString());
                 }
                 if (queryParams.ContainsKey("dateTo") && !string.IsNullOrWhiteSpace(queryParams["dateTo"].ToString()))
                 {
-                    dateTo = Convert.ToDateTime(queryParams["dateTo"].ToString()).ToUniversalTime().AddDays(1);
+                    dateTo = Convert.ToDateTime(queryParams["dateTo"].ToString()).AddDays(1);
                 }
                 var shipType = 0;
                 if (queryParams.ContainsKey("shipType") && !string.IsNullOrWhiteSpace(queryParams["shipType"].ToString()))
@@ -2253,72 +2253,73 @@ namespace hmt_energy_csharp.VesselInfos
                             PUs.Columns.Add(drLastFm["FuelType"].ToString(), typeof(double));
 
                         //表添加内容
-                        var drCurrent = PUs.Select($"DeviceType='{drLastFm["DeviceType"]}'")?[0];
-                        if (drCurrent is null)
+                        var drsCurrent = PUs.Select($"DeviceType='{drLastFm["DeviceType"]}'");
+                        if (drsCurrent.Length > 0)
                         {
-                            var drNew = PUs.NewRow();
-                            drNew["DeviceType"] = drLastFm["DeviceType"].ToString();
-                            drNew[drLastFm["FuelType"].ToString()] = Convert.ToDouble(drLastFm["FuelType"]) - Convert.ToDouble(drFirstFm?["FuelType"]);
-                            PUs.Rows.Add(drNew);
+                            var drCurrent = drsCurrent[0];
+                            drCurrent[drLastFm["FuelType"].ToString()] = Convert.ToDouble(StringHelper.GetDataColumnValue(drLastFm["ConsAcc"])) - Convert.ToDouble(StringHelper.GetDataColumnValue(drFirstFm?["ConsAcc"])) + Convert.ToDouble(StringHelper.GetDataColumnValue(drCurrent[drLastFm["FuelType"].ToString()]));
                         }
                         else
                         {
-                            drCurrent[drLastFm["FuelType"].ToString()] = Convert.ToDouble(drLastFm["FuelType"]) - Convert.ToDouble(drFirstFm?["FuelType"]) + (double)drCurrent[drLastFm["FuelType"].ToString()];
+                            var drNew = PUs.NewRow();
+                            drNew["DeviceType"] = drLastFm["DeviceType"].ToString();
+                            drNew[drLastFm["FuelType"].ToString()] = Convert.ToDouble(StringHelper.GetDataColumnValue(drLastFm["ConsAcc"])) - Convert.ToDouble(StringHelper.GetDataColumnValue(drFirstFm?["ConsAcc"]));
+                            PUs.Rows.Add(drNew);
                         }
                     }
 
                     sbSql.Clear();
 
                     //总燃油消耗定义
-                    var DGOC = Convert.ToDouble(PUs.Compute("Sum(DGO)", ""));
-                    var LFOC = Convert.ToDouble(PUs.Compute("Sum(LFO)", ""));
-                    var HFOC = Convert.ToDouble(PUs.Compute("Sum(HFO)", ""));
-                    var LPG_PC = Convert.ToDouble(PUs.Compute("Sum(LPG_P)", ""));
-                    var LPG_BC = Convert.ToDouble(PUs.Compute("Sum(LPG_B)", ""));
-                    var LNGC = Convert.ToDouble(PUs.Compute("Sum(LNG)", ""));
-                    var MethanolC = Convert.ToDouble(PUs.Compute("Sum(Methanol)", ""));
-                    var EthanolC = Convert.ToDouble(PUs.Compute("Sum(Ethanol)", ""));
+                    var DGOC = Convert.ToDouble(PUs.Columns.Contains("DGO") ? PUs.Compute("Sum(DGO)", "") : 0);
+                    var LFOC = Convert.ToDouble(PUs.Columns.Contains("LFO") ? PUs.Compute("Sum(LFO)", "") : 0);
+                    var HFOC = Convert.ToDouble(PUs.Columns.Contains("HFO") ? PUs.Compute("Sum(HFO)", "") : 0);
+                    var LPG_PC = Convert.ToDouble(PUs.Columns.Contains("LPG_P") ? PUs.Compute("Sum(LPG_P)", "") : 0);
+                    var LPG_BC = Convert.ToDouble(PUs.Columns.Contains("LPG_B") ? PUs.Compute("Sum(LPG_B)", "") : 0);
+                    var LNGC = Convert.ToDouble(PUs.Columns.Contains("LNG") ? PUs.Compute("Sum(LNG)", "") : 0);
+                    var MethanolC = Convert.ToDouble(PUs.Columns.Contains("Methanol") ? PUs.Compute("Sum(Methanol)", "") : 0);
+                    var EthanolC = Convert.ToDouble(PUs.Columns.Contains("Ethanol") ? PUs.Compute("Sum(Ethanol)", "") : 0);
 
                     //平均燃油效率
                     sbSql.AppendFormat(@$"SELECT
-	                                        AVG( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) ""AVGDGO"",
-	                                        AVG( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE LFO END ) ""AVGLFO"",
-	                                        AVG( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE HFO END ) ""AVGHFO"",
-	                                        AVG( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE LPG_P END ) ""AVGLPG_P"",
-	                                        AVG( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE LPG_B END ) ""AVGLPG_B"",
-	                                        AVG( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE LNG END ) ""AVGLNG"",
-	                                        AVG( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) ""AVGMethanol"",
-	                                        AVG( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) ""AVGEthanol"",
-	                                        COUNT( 1 ) / 360.0 ""RunTime"",
-	                                        COUNT( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) / 360.0 ""DGORunTime"",
-	                                        COUNT( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE LFO END ) / 360.0 ""LFORunTime"",
-	                                        COUNT( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE HFO END ) / 360.0 ""HFORunTime"",
-	                                        COUNT( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE LPG_P END ) / 360.0 ""LPG_PRunTime"",
-	                                        COUNT( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE LPG_B END ) / 360.0 ""LPG_BRunTime"",
-	                                        COUNT( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE LNG END ) / 360.0 ""LNGRunTime"",
-	                                        COUNT( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) / 360.0 ""MethanolRunTime"",
-	                                        COUNT( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) / 360.0 ""EthanolRunTime"",
-	                                        AVG( tv.""GroundSpeed"" ) ""AVGSpeedGrd"",
-	                                        AVG( tv.""WaterSpeed"" ) ""AVGWaterSpeed"",
-	                                        MAX( tv.""TotalDistanceGrd"" ) - MIN( tv.""TotalDistanceGrd"" ) ""DistanceGrd"",
-	                                        MAX( tv.""TotalDistanceWat"" ) - MIN( tv.""TotalDistanceWat"" ) ""DistanceWat"",
-	                                        AVG( tt.""Power"" ) ""AVGPower"",
-	                                        AVG( (CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END) / tv.""GroundSpeed"" ) ""AVGDGOpNM"",
-	                                        AVG( (CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE LFO END) / tv.""GroundSpeed"" ) ""AVGLFOpNM"",
-	                                        AVG( (CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE HFO END) / tv.""GroundSpeed"" ) ""AVGHFOpNM"",
-	                                        AVG( (CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE LPG_P END) / tv.""GroundSpeed"" ) ""AVGLPG_PpNM"",
-	                                        AVG( (CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE LPG_B END) / tv.""GroundSpeed"" ) ""AVGLPG_BpNM"",
-	                                        AVG( (CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE LNG END) / tv.""GroundSpeed"" ) ""AVGLNGpNM"",
-	                                        AVG( (CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END) / tv.""GroundSpeed"" ) ""AVGMethanolpNM"",
-	                                        AVG( (CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END) / tv.""GroundSpeed"" ) ""AVGEthanolpNM"",
-	                                        AVG( (CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END) / tt.""Power"" ) ""AVGDGOpPower"",
-	                                        AVG( (CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE LFO END) / tt.""Power"" ) ""AVGLFOpPower"",
-	                                        AVG( (CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE HFO END) / tt.""Power"" ) ""AVGHFOpPower"",
-	                                        AVG( (CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE LPG_P END) / tt.""Power"" ) ""AVGLPG_PpPower"",
-	                                        AVG( (CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE LPG_B END) / tt.""Power"" ) ""AVGLPG_BpPower"",
-	                                        AVG( (CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE LNG END) / tt.""Power"" ) ""AVGLNGpPower"",
-	                                        AVG( (CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END) / tt.""Power"" ) ""AVGMethanolpPower"",
-	                                        AVG( (CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END) / tt.""Power"" ) ""AVGEthanolpPower""
+	                                        CAST(AVG( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) AS DECIMAL(14,4)) ""AVGDGO"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE LFO END ) AS DECIMAL(14,4)) ""AVGLFO"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE HFO END ) AS DECIMAL(14,4)) ""AVGHFO"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE LPG_P END ) AS DECIMAL(14,4)) ""AVGLPG_P"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE LPG_B END ) AS DECIMAL(14,4)) ""AVGLPG_B"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE LNG END ) AS DECIMAL(14,4)) ""AVGLNG"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) AS DECIMAL(14,4)) ""AVGMethanol"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) AS DECIMAL(14,4)) ""AVGEthanol"",
+	                                        CAST(COUNT( 1 ) / 360.0 AS DECIMAL(14,4)) ""RunTime"",
+	                                        CAST(COUNT( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) / 360.0 AS DECIMAL(14,4)) ""DGORunTime"",
+	                                        CAST(COUNT( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE LFO END ) / 360.0 AS DECIMAL(14,4)) ""LFORunTime"",
+	                                        CAST(COUNT( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE HFO END ) / 360.0 AS DECIMAL(14,4)) ""HFORunTime"",
+	                                        CAST(COUNT( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE LPG_P END ) / 360.0 AS DECIMAL(14,4)) ""LPG_PRunTime"",
+	                                        CAST(COUNT( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE LPG_B END ) / 360.0 AS DECIMAL(14,4)) ""LPG_BRunTime"",
+	                                        CAST(COUNT( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE LNG END ) / 360.0 AS DECIMAL(14,4)) ""LNGRunTime"",
+	                                        CAST(COUNT( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) / 360.0 AS DECIMAL(14,4)) ""MethanolRunTime"",
+	                                        CAST(COUNT( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) / 360.0 AS DECIMAL(14,4)) ""EthanolRunTime"",
+	                                        CAST(AVG( tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""AVGSpeedGrd"",
+	                                        CAST(AVG( tv.""WaterSpeed"" ) AS DECIMAL(14,4)) ""AVGWaterSpeed"",
+	                                        CAST(MAX( tv.""TotalDistanceGrd"" ) - MIN( tv.""TotalDistanceGrd"" ) AS DECIMAL(14,4)) ""DistanceGrd"",
+	                                        CAST(MAX( tv.""TotalDistanceWat"" ) - MIN( tv.""TotalDistanceWat"" ) AS DECIMAL(14,4)) ""DistanceWat"",
+	                                        CAST(AVG( tt.""Power"" ) AS DECIMAL(14,4)) ""AVGPower"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END) / tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""AVGDGOpNM"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE LFO END) / tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""AVGLFOpNM"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE HFO END) / tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""AVGHFOpNM"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE LPG_P END) / tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""AVGLPG_PpNM"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE LPG_B END) / tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""AVGLPG_BpNM"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE LNG END) / tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""AVGLNGpNM"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END) / tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""AVGMethanolpNM"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END) / tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""AVGEthanolpNM"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END) / tt.""Power"" ) AS DECIMAL(14,4)) ""AVGDGOpPower"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE LFO END) / tt.""Power"" ) AS DECIMAL(14,4)) ""AVGLFOpPower"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE HFO END) / tt.""Power"" ) AS DECIMAL(14,4)) ""AVGHFOpPower"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE LPG_P END) / tt.""Power"" ) AS DECIMAL(14,4)) ""AVGLPG_PpPower"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE LPG_B END) / tt.""Power"" ) AS DECIMAL(14,4)) ""AVGLPG_BpPower"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE LNG END) / tt.""Power"" ) AS DECIMAL(14,4)) ""AVGLNGpPower"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END) / tt.""Power"" ) AS DECIMAL(14,4)) ""AVGMethanolpPower"",
+	                                        CAST(AVG( (CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END) / tt.""Power"" ) AS DECIMAL(14,4)) ""AVGEthanolpPower""
                                         FROM
 	                                        ""vesselinfo"" tv,
 	                                        ""energy_totalindicator"" tt
@@ -2332,42 +2333,42 @@ namespace hmt_energy_csharp.VesselInfos
 	                                        AND tv.""GroundSpeed"" > 0.5
 	                                        AND tt.""Power"" > 0.5
 	                                        AND tt.""Rpm"" > 0.5");
-                    var baseData = await _sqlRepository.ExecuteDataTable(sbSql.ToString());
+                    var baseData = await _repository.ExecuteDataTable(sbSql.ToString());
 
                     sbSql.Clear();
 
                     //基本信息定义
-                    var runtime = Convert.ToDouble(baseData.Rows[0]["RunTime"]); //航行时间 单位:小时
-                    var distance = Convert.ToDouble(baseData.Rows[0]["DistanceGrd"]); //航行距离 单位:海里
-                    distance = distance == 0 ? Convert.ToDouble(baseData.Rows[0]["DistanceWat"]) : distance;
+                    var runtime = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["RunTime"])); //航行时间 单位:小时
+                    var distance = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["DistanceGrd"])); //航行距离 单位:海里
+                    distance = distance == 0 ? Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["DistanceWat"])) : distance;
 
                     //燃料消耗率曲线
                     sbSql.AppendFormat(@$"SELECT
-	                                        TRUNC(tv.""ReceiveDatetime"", 'DD') ReceiveDatetime,
-	                                        AVG( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) / AVG( tv.""GroundSpeed"" ) DGOPerNmGrd,
-	                                        AVG( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE tt.LFO END ) / AVG( tv.""GroundSpeed"" ) LFOPerNmGrd,
-	                                        AVG( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE tt.HFO END ) / AVG( tv.""GroundSpeed"" ) HFOPerNmGrd,
-	                                        AVG( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE tt.LPG_P END ) / AVG( tv.""GroundSpeed"" ) LPG_PPerNmGrd,
-	                                        AVG( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE tt.LPG_B END ) / AVG( tv.""GroundSpeed"" ) LPG_BPerNmGrd,
-	                                        AVG( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE tt.LNG END ) / AVG( tv.""GroundSpeed"" ) LNGPerNmGrd,
-	                                        AVG( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) / AVG( tv.""GroundSpeed"" ) MethanolPerNmGrd,
-	                                        AVG( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) / AVG( tv.""GroundSpeed"" ) EthanolPerNmGrd,
-	                                        AVG( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) / AVG( tv.""WaterSpeed"" ) DGOPerNmWat,
-	                                        AVG( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE tt.LFO END ) / AVG( tv.""WaterSpeed"" ) LFOPerNmWat,
-	                                        AVG( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE tt.HFO END ) / AVG( tv.""WaterSpeed"" ) HFOPerNmWat,
-	                                        AVG( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE tt.LPG_P END ) / AVG( tv.""WaterSpeed"" ) LPG_PPerNmWat,
-	                                        AVG( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE tt.LPG_B END ) / AVG( tv.""WaterSpeed"" ) LPG_BPerNmWat,
-	                                        AVG( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE tt.LNG END ) / AVG( tv.""WaterSpeed"" ) LNGPerNmWat,
-	                                        AVG( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) / AVG( tv.""WaterSpeed"" ) MethanolPerNmWat,
-	                                        AVG( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) / AVG( tv.""WaterSpeed"" ) EthanolPerNmWat,
-	                                        AVG( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) / AVG( tt.""Power"" ) DGOPerPower,
-	                                        AVG( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE tt.LFO END ) / AVG( tt.""Power"" ) LFOPerPower,
-	                                        AVG( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE tt.HFO END ) / AVG( tt.""Power"" ) HFOPerPower,
-	                                        AVG( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE tt.LPG_P END ) / AVG( tt.""Power"" ) LPG_PPerPower,
-	                                        AVG( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE tt.LPG_B END ) / AVG( tt.""Power"" ) LPG_BPerPower,
-	                                        AVG( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE tt.LNG END ) / AVG( tt.""Power"" ) LNGPerPower,
-	                                        AVG( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) / AVG( tt.""Power"" ) MethanolPerPower,
-	                                        AVG( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) / AVG( tt.""Power"" ) EthanolPerPower
+	                                        TRUNC(tv.""ReceiveDatetime"", 'DD') ""ReceiveDatetime"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) / AVG( tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""DGOPerNmGrd"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE tt.LFO END ) / AVG( tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""LFOPerNmGrd"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE tt.HFO END ) / AVG( tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""HFOPerNmGrd"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE tt.LPG_P END ) / AVG( tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""LPG_PPerNmGrd"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE tt.LPG_B END ) / AVG( tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""LPG_BPerNmGrd"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE tt.LNG END ) / AVG( tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""LNGPerNmGrd"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) / AVG( tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""MethanolPerNmGrd"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) / AVG( tv.""GroundSpeed"" ) AS DECIMAL(14,4)) ""EthanolPerNmGrd"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) / AVG( tv.""WaterSpeed"" ) AS DECIMAL(14,4)) ""DGOPerNmWat"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE tt.LFO END ) / AVG( tv.""WaterSpeed"" ) AS DECIMAL(14,4)) ""LFOPerNmWat"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE tt.HFO END ) / AVG( tv.""WaterSpeed"" ) AS DECIMAL(14,4)) ""HFOPerNmWat"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE tt.LPG_P END ) / AVG( tv.""WaterSpeed"" ) AS DECIMAL(14,4)) ""LPG_PPerNmWat"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE tt.LPG_B END ) / AVG( tv.""WaterSpeed"" ) AS DECIMAL(14,4)) ""LPG_BPerNmWat"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE tt.LNG END ) / AVG( tv.""WaterSpeed"" ) AS DECIMAL(14,4)) ""LNGPerNmWat"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) / AVG( tv.""WaterSpeed"" ) AS DECIMAL(14,4)) ""MethanolPerNmWat"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) / AVG( tv.""WaterSpeed"" ) AS DECIMAL(14,4)) ""EthanolPerNmWat"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.DGO ) < 0.1 THEN NULL ELSE tt.DGO END ) / AVG( tt.""Power"" ) AS DECIMAL(14,4)) ""DGOPerPower"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LFO ) < 0.1 THEN NULL ELSE tt.LFO END ) / AVG( tt.""Power"" ) AS DECIMAL(14,4)) ""LFOPerPower"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.HFO ) < 0.1 THEN NULL ELSE tt.HFO END ) / AVG( tt.""Power"" ) AS DECIMAL(14,4)) ""HFOPerPower"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LPG_P ) < 0.1 THEN NULL ELSE tt.LPG_P END ) / AVG( tt.""Power"" ) AS DECIMAL(14,4)) ""LPG_PPerPower"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LPG_B ) < 0.1 THEN NULL ELSE tt.LPG_B END ) / AVG( tt.""Power"" ) AS DECIMAL(14,4)) ""LPG_BPerPower"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.LNG ) < 0.1 THEN NULL ELSE tt.LNG END ) / AVG( tt.""Power"" ) AS DECIMAL(14,4)) ""LNGPerPower"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.""Methanol"" ) < 0.1 THEN NULL ELSE tt.""Methanol"" END ) / AVG( tt.""Power"" ) AS DECIMAL(14,4)) ""MethanolPerPower"",
+	                                        CAST(AVG( CASE WHEN ABS( tt.""Ethanol"" ) < 0.1 THEN NULL ELSE tt.""Ethanol"" END ) / AVG( tt.""Power"" ) AS DECIMAL(14,4)) ""EthanolPerPower""
                                         FROM
 	                                        ""vesselinfo"" tv,
 	                                        ""energy_totalindicator"" tt
@@ -2385,306 +2386,298 @@ namespace hmt_energy_csharp.VesselInfos
 	                                        TRUNC(tv.""ReceiveDatetime"", 'DD')
                                         ORDER BY
 	                                        TRUNC(tv.""ReceiveDatetime"", 'DD')");
-                    var eeData = await _sqlRepository.ExecuteDataTable(sbSql.ToString());
+                    var eeData = await _repository.ExecuteDataTable(sbSql.ToString());
 
                     sbSql.Clear();
 
                     //获取与预测油耗偏差较大时间点航行状况信息
                     sbSql.AppendFormat(@"SELECT
-	                                    t.*
-                                    FROM
-	                                    (
-	                                    SELECT
-		                                    t0.""ReceiveDatetime"",
-		                                    CAST(t0.""Longitude"" AS DECIMAL(14,4)) ""Longitude"",
-		                                    CAST(t0.""Latitude"" AS DECIMAL(14,4)) ""Latitude"",
-		                                    CAST(t0.""Course"" AS DECIMAL(14,4)) ""Course"",
-		                                    CAST(t0.""WaterSpeed"" AS DECIMAL(14,4)) ""WaterSpeed"",
-		                                    CAST(t0.""GroundSpeed"" AS DECIMAL(14,4)) ""GroundSpeed"",
-		                                    CAST(t0.""WindSpeed"" AS DECIMAL(14,4)) ""WindSpeed"",
-		                                    CAST(t0.""WindDirection"" AS DECIMAL(14,4)) ""WindDirection"",
-		                                    CAST(t0.""Trim"" AS DECIMAL(14,4)) ""Trim"",
-		                                    CAST(t0.""Heel"" AS DECIMAL(14,4)) ""Heel"",
-		                                    CAST(t0.""Draft"" AS DECIMAL(14,4)) ""Draft"",
-		                                    CAST(t1.""Power"" AS DECIMAL(14,4)) ""Power"",
-		                                    CAST(t1.DGO AS DECIMAL(14,4)) ""DGO"",
-		                                    CAST(t1.LFO AS DECIMAL(14,4)) ""LFO"",
-		                                    CAST(t1.HFO AS DECIMAL(14,4)) ""HFO"",
-		                                    CAST(t1.LPG_P AS DECIMAL(14,4)) ""LPG_P"",
-		                                    CAST(t1.LPG_B AS DECIMAL(14,4)) ""LPG_B"",
-		                                    CAST(t1.LNG AS DECIMAL(14,4)) ""LNG"",
-		                                    CAST(t1.""Methanol"" AS DECIMAL(14,4)) ""Methanol"",
-		                                    CAST(t1.""Ethanol"" AS DECIMAL(14,4)) ""Ethanol""
-	                                    FROM
-		                                    ""vesselinfo"" t0,
-		                                    ""energy_totalindicator"" t1,
-		                                    ""energy_prediction"" t2
-	                                    WHERE
-		                                    NVL(t0.""delete_time"", TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')) = TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')
-		                                    AND t0.SN = t1.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime""
-		                                    AND t0.SN = t2.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime""
-		                                    AND t0.""GroundSpeed"" > 0
-		                                    AND t1.""Number"" = '{0}'
-		                                    AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP('{1}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND t1.""ReceiveDatetime"" < TO_TIMESTAMP('{2}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND ABS(t2.DGO - t1.DGO) / DECODE(t2.DGO, 0, 1) > 0.8 UNION
-	                                    SELECT
-		                                    t0.""ReceiveDatetime"",
-		                                    CAST(t0.""Longitude"" AS DECIMAL(14,4)) ""Longitude"",
-		                                    CAST(t0.""Latitude"" AS DECIMAL(14,4)) ""Latitude"",
-		                                    CAST(t0.""Course"" AS DECIMAL(14,4)) ""Course"",
-		                                    CAST(t0.""WaterSpeed"" AS DECIMAL(14,4)) ""WaterSpeed"",
-		                                    CAST(t0.""GroundSpeed"" AS DECIMAL(14,4)) ""GroundSpeed"",
-		                                    CAST(t0.""WindSpeed"" AS DECIMAL(14,4)) ""WindSpeed"",
-		                                    CAST(t0.""WindDirection"" AS DECIMAL(14,4)) ""WindDirection"",
-		                                    CAST(t0.""Trim"" AS DECIMAL(14,4)) ""Trim"",
-		                                    CAST(t0.""Heel"" AS DECIMAL(14,4)) ""Heel"",
-		                                    CAST(t0.""Draft"" AS DECIMAL(14,4)) ""Draft"",
-		                                    CAST(t1.""Power"" AS DECIMAL(14,4)) ""Power"",
-		                                    CAST(t1.DGO AS DECIMAL(14,4)) ""DGO"",
-		                                    CAST(t1.LFO AS DECIMAL(14,4)) ""LFO"",
-		                                    CAST(t1.HFO AS DECIMAL(14,4)) ""HFO"",
-		                                    CAST(t1.LPG_P AS DECIMAL(14,4)) ""LPG_P"",
-		                                    CAST(t1.LPG_B AS DECIMAL(14,4)) ""LPG_B"",
-		                                    CAST(t1.LNG AS DECIMAL(14,4)) ""LNG"",
-		                                    CAST(t1.""Methanol"" AS DECIMAL(14,4)) ""Methanol"",
-		                                    CAST(t1.""Ethanol"" AS DECIMAL(14,4)) ""Ethanol""
-	                                    FROM
-		                                    ""vesselinfo"" t0,
-		                                    ""energy_totalindicator"" t1,
-		                                    ""energy_prediction"" t2
-	                                    WHERE
-		                                    NVL(t0.""delete_time"", TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')) = TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')
-		                                    AND t0.SN = t1.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime""
-		                                    AND t0.SN = t2.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime""
-		                                    AND t0.""GroundSpeed"" > 0
-		                                    AND t1.""Number"" = '{0}'
-		                                    AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP('{1}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND t1.""ReceiveDatetime"" < TO_TIMESTAMP('{2}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND ABS(t2.LFO - t1.LFO) / DECODE(t2.LFO, 0, 1) > 0.8 UNION
-	                                    SELECT
-		                                    t0.""ReceiveDatetime"",
-		                                    CAST(t0.""Longitude"" AS DECIMAL(14,4)) ""Longitude"",
-		                                    CAST(t0.""Latitude"" AS DECIMAL(14,4)) ""Latitude"",
-		                                    CAST(t0.""Course"" AS DECIMAL(14,4)) ""Course"",
-		                                    CAST(t0.""WaterSpeed"" AS DECIMAL(14,4)) ""WaterSpeed"",
-		                                    CAST(t0.""GroundSpeed"" AS DECIMAL(14,4)) ""GroundSpeed"",
-		                                    CAST(t0.""WindSpeed"" AS DECIMAL(14,4)) ""WindSpeed"",
-		                                    CAST(t0.""WindDirection"" AS DECIMAL(14,4)) ""WindDirection"",
-		                                    CAST(t0.""Trim"" AS DECIMAL(14,4)) ""Trim"",
-		                                    CAST(t0.""Heel"" AS DECIMAL(14,4)) ""Heel"",
-		                                    CAST(t0.""Draft"" AS DECIMAL(14,4)) ""Draft"",
-		                                    CAST(t1.""Power"" AS DECIMAL(14,4)) ""Power"",
-		                                    CAST(t1.DGO AS DECIMAL(14,4)) ""DGO"",
-		                                    CAST(t1.LFO AS DECIMAL(14,4)) ""LFO"",
-		                                    CAST(t1.HFO AS DECIMAL(14,4)) ""HFO"",
-		                                    CAST(t1.LPG_P AS DECIMAL(14,4)) ""LPG_P"",
-		                                    CAST(t1.LPG_B AS DECIMAL(14,4)) ""LPG_B"",
-		                                    CAST(t1.LNG AS DECIMAL(14,4)) ""LNG"",
-		                                    CAST(t1.""Methanol"" AS DECIMAL(14,4)) ""Methanol"",
-		                                    CAST(t1.""Ethanol"" AS DECIMAL(14,4)) ""Ethanol""
-	                                    FROM
-		                                    ""vesselinfo"" t0,
-		                                    ""energy_totalindicator"" t1,
-		                                    ""energy_prediction"" t2
-	                                    WHERE
-		                                    NVL(t0.""delete_time"", TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')) = TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')
-		                                    AND t0.SN = t1.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime""
-		                                    AND t0.SN = t2.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime""
-		                                    AND t0.""GroundSpeed"" > 0
-		                                    AND t1.""Number"" = '{0}'
-		                                    AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP('{1}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND t1.""ReceiveDatetime"" < TO_TIMESTAMP('{2}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND ABS(t2.HFO - t1.HFO) / DECODE(t2.HFO, 0, 1) > 0.8 UNION
-	                                    SELECT
-		                                    t0.""ReceiveDatetime"",
-		                                    CAST(t0.""Longitude"" AS DECIMAL(14,4)) ""Longitude"",
-		                                    CAST(t0.""Latitude"" AS DECIMAL(14,4)) ""Latitude"",
-		                                    CAST(t0.""Course"" AS DECIMAL(14,4)) ""Course"",
-		                                    CAST(t0.""WaterSpeed"" AS DECIMAL(14,4)) ""WaterSpeed"",
-		                                    CAST(t0.""GroundSpeed"" AS DECIMAL(14,4)) ""GroundSpeed"",
-		                                    CAST(t0.""WindSpeed"" AS DECIMAL(14,4)) ""WindSpeed"",
-		                                    CAST(t0.""WindDirection"" AS DECIMAL(14,4)) ""WindDirection"",
-		                                    CAST(t0.""Trim"" AS DECIMAL(14,4)) ""Trim"",
-		                                    CAST(t0.""Heel"" AS DECIMAL(14,4)) ""Heel"",
-		                                    CAST(t0.""Draft"" AS DECIMAL(14,4)) ""Draft"",
-		                                    CAST(t1.""Power"" AS DECIMAL(14,4)) ""Power"",
-		                                    CAST(t1.DGO AS DECIMAL(14,4)) ""DGO"",
-		                                    CAST(t1.LFO AS DECIMAL(14,4)) ""LFO"",
-		                                    CAST(t1.HFO AS DECIMAL(14,4)) ""HFO"",
-		                                    CAST(t1.LPG_P AS DECIMAL(14,4)) ""LPG_P"",
-		                                    CAST(t1.LPG_B AS DECIMAL(14,4)) ""LPG_B"",
-		                                    CAST(t1.LNG AS DECIMAL(14,4)) ""LNG"",
-		                                    CAST(t1.""Methanol"" AS DECIMAL(14,4)) ""Methanol"",
-		                                    CAST(t1.""Ethanol"" AS DECIMAL(14,4)) ""Ethanol""
-	                                    FROM
-		                                    ""vesselinfo"" t0,
-		                                    ""energy_totalindicator"" t1,
-		                                    ""energy_prediction"" t2
-	                                    WHERE
-		                                    NVL(t0.""delete_time"", TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')) = TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')
-		                                    AND t0.SN = t1.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime""
-		                                    AND t0.SN = t2.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime""
-		                                    AND t0.""GroundSpeed"" > 0
-		                                    AND t1.""Number"" = '{0}'
-		                                    AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP('{1}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND t1.""ReceiveDatetime"" < TO_TIMESTAMP('{2}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND ABS(t2.LPG_P - t1.LPG_P) / DECODE(t2.LPG_P, 0, 1) > 0.8 UNION
-	                                    SELECT
-		                                    t0.""ReceiveDatetime"",
-		                                    CAST(t0.""Longitude"" AS DECIMAL(14,4)) ""Longitude"",
-		                                    CAST(t0.""Latitude"" AS DECIMAL(14,4)) ""Latitude"",
-		                                    CAST(t0.""Course"" AS DECIMAL(14,4)) ""Course"",
-		                                    CAST(t0.""WaterSpeed"" AS DECIMAL(14,4)) ""WaterSpeed"",
-		                                    CAST(t0.""GroundSpeed"" AS DECIMAL(14,4)) ""GroundSpeed"",
-		                                    CAST(t0.""WindSpeed"" AS DECIMAL(14,4)) ""WindSpeed"",
-		                                    CAST(t0.""WindDirection"" AS DECIMAL(14,4)) ""WindDirection"",
-		                                    CAST(t0.""Trim"" AS DECIMAL(14,4)) ""Trim"",
-		                                    CAST(t0.""Heel"" AS DECIMAL(14,4)) ""Heel"",
-		                                    CAST(t0.""Draft"" AS DECIMAL(14,4)) ""Draft"",
-		                                    CAST(t1.""Power"" AS DECIMAL(14,4)) ""Power"",
-		                                    CAST(t1.DGO AS DECIMAL(14,4)) ""DGO"",
-		                                    CAST(t1.LFO AS DECIMAL(14,4)) ""LFO"",
-		                                    CAST(t1.HFO AS DECIMAL(14,4)) ""HFO"",
-		                                    CAST(t1.LPG_P AS DECIMAL(14,4)) ""LPG_P"",
-		                                    CAST(t1.LPG_B AS DECIMAL(14,4)) ""LPG_B"",
-		                                    CAST(t1.LNG AS DECIMAL(14,4)) ""LNG"",
-		                                    CAST(t1.""Methanol"" AS DECIMAL(14,4)) ""Methanol"",
-		                                    CAST(t1.""Ethanol"" AS DECIMAL(14,4)) ""Ethanol""
-	                                    FROM
-		                                    ""vesselinfo"" t0,
-		                                    ""energy_totalindicator"" t1,
-		                                    ""energy_prediction"" t2
-	                                    WHERE
-		                                    NVL(t0.""delete_time"", TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')) = TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')
-		                                    AND t0.SN = t1.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime""
-		                                    AND t0.SN = t2.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime""
-		                                    AND t0.""GroundSpeed"" > 0
-		                                    AND t1.""Number"" = '{0}'
-		                                    AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP('{1}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND t1.""ReceiveDatetime"" < TO_TIMESTAMP('{2}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND ABS(t2.LPG_B - t1.LPG_B) / DECODE(t2.LPG_B, 0, 1) > 0.8 UNION
-	                                    SELECT
-		                                    t0.""ReceiveDatetime"",
-		                                    CAST(t0.""Longitude"" AS DECIMAL(14,4)) ""Longitude"",
-		                                    CAST(t0.""Latitude"" AS DECIMAL(14,4)) ""Latitude"",
-		                                    CAST(t0.""Course"" AS DECIMAL(14,4)) ""Course"",
-		                                    CAST(t0.""WaterSpeed"" AS DECIMAL(14,4)) ""WaterSpeed"",
-		                                    CAST(t0.""GroundSpeed"" AS DECIMAL(14,4)) ""GroundSpeed"",
-		                                    CAST(t0.""WindSpeed"" AS DECIMAL(14,4)) ""WindSpeed"",
-		                                    CAST(t0.""WindDirection"" AS DECIMAL(14,4)) ""WindDirection"",
-		                                    CAST(t0.""Trim"" AS DECIMAL(14,4)) ""Trim"",
-		                                    CAST(t0.""Heel"" AS DECIMAL(14,4)) ""Heel"",
-		                                    CAST(t0.""Draft"" AS DECIMAL(14,4)) ""Draft"",
-		                                    CAST(t1.""Power"" AS DECIMAL(14,4)) ""Power"",
-		                                    CAST(t1.DGO AS DECIMAL(14,4)) ""DGO"",
-		                                    CAST(t1.LFO AS DECIMAL(14,4)) ""LFO"",
-		                                    CAST(t1.HFO AS DECIMAL(14,4)) ""HFO"",
-		                                    CAST(t1.LPG_P AS DECIMAL(14,4)) ""LPG_P"",
-		                                    CAST(t1.LPG_B AS DECIMAL(14,4)) ""LPG_B"",
-		                                    CAST(t1.LNG AS DECIMAL(14,4)) ""LNG"",
-		                                    CAST(t1.""Methanol"" AS DECIMAL(14,4)) ""Methanol"",
-		                                    CAST(t1.""Ethanol"" AS DECIMAL(14,4)) ""Ethanol""
-	                                    FROM
-		                                    ""vesselinfo"" t0,
-		                                    ""energy_totalindicator"" t1,
-		                                    ""energy_prediction"" t2
-	                                    WHERE
-		                                    NVL(t0.""delete_time"", TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')) = TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')
-		                                    AND t0.SN = t1.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime""
-		                                    AND t0.SN = t2.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime""
-		                                    AND t0.""GroundSpeed"" > 0
-		                                    AND t1.""Number"" = '{0}'
-		                                    AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP('{1}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND t1.""ReceiveDatetime"" < TO_TIMESTAMP('{2}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND ABS(t2.LNG - t1.LNG) / DECODE(t2.LNG, 0, 1) > 0.8 UNION
-	                                    SELECT
-		                                    t0.""ReceiveDatetime"",
-		                                    CAST(t0.""Longitude"" AS DECIMAL(14,4)) ""Longitude"",
-		                                    CAST(t0.""Latitude"" AS DECIMAL(14,4)) ""Latitude"",
-		                                    CAST(t0.""Course"" AS DECIMAL(14,4)) ""Course"",
-		                                    CAST(t0.""WaterSpeed"" AS DECIMAL(14,4)) ""WaterSpeed"",
-		                                    CAST(t0.""GroundSpeed"" AS DECIMAL(14,4)) ""GroundSpeed"",
-		                                    CAST(t0.""WindSpeed"" AS DECIMAL(14,4)) ""WindSpeed"",
-		                                    CAST(t0.""WindDirection"" AS DECIMAL(14,4)) ""WindDirection"",
-		                                    CAST(t0.""Trim"" AS DECIMAL(14,4)) ""Trim"",
-		                                    CAST(t0.""Heel"" AS DECIMAL(14,4)) ""Heel"",
-		                                    CAST(t0.""Draft"" AS DECIMAL(14,4)) ""Draft"",
-		                                    CAST(t1.""Power"" AS DECIMAL(14,4)) ""Power"",
-		                                    CAST(t1.DGO AS DECIMAL(14,4)) ""DGO"",
-		                                    CAST(t1.LFO AS DECIMAL(14,4)) ""LFO"",
-		                                    CAST(t1.HFO AS DECIMAL(14,4)) ""HFO"",
-		                                    CAST(t1.LPG_P AS DECIMAL(14,4)) ""LPG_P"",
-		                                    CAST(t1.LPG_B AS DECIMAL(14,4)) ""LPG_B"",
-		                                    CAST(t1.LNG AS DECIMAL(14,4)) ""LNG"",
-		                                    CAST(t1.""Methanol"" AS DECIMAL(14,4)) ""Methanol"",
-		                                    CAST(t1.""Ethanol"" AS DECIMAL(14,4)) ""Ethanol""
-	                                    FROM
-		                                    ""vesselinfo"" t0,
-		                                    ""energy_totalindicator"" t1,
-		                                    ""energy_prediction"" t2
-	                                    WHERE
-		                                    NVL(t0.""delete_time"", TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')) = TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')
-		                                    AND t0.SN = t1.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime""
-		                                    AND t0.SN = t2.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime""
-		                                    AND t0.""GroundSpeed"" > 0
-		                                    AND t1.""Number"" = '{0}'
-		                                    AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP('{1}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND t1.""ReceiveDatetime"" < TO_TIMESTAMP('{2}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND ABS(t2.""Methanol"" - t1.""Methanol"") / DECODE(t2.""Methanol"", 0, 1) > 0.8 UNION
-	                                    SELECT
-		                                    t0.""ReceiveDatetime"",
-		                                    CAST(t0.""Longitude"" AS DECIMAL(14,4)) ""Longitude"",
-		                                    CAST(t0.""Latitude"" AS DECIMAL(14,4)) ""Latitude"",
-		                                    CAST(t0.""Course"" AS DECIMAL(14,4)) ""Course"",
-		                                    CAST(t0.""WaterSpeed"" AS DECIMAL(14,4)) ""WaterSpeed"",
-		                                    CAST(t0.""GroundSpeed"" AS DECIMAL(14,4)) ""GroundSpeed"",
-		                                    CAST(t0.""WindSpeed"" AS DECIMAL(14,4)) ""WindSpeed"",
-		                                    CAST(t0.""WindDirection"" AS DECIMAL(14,4)) ""WindDirection"",
-		                                    CAST(t0.""Trim"" AS DECIMAL(14,4)) ""Trim"",
-		                                    CAST(t0.""Heel"" AS DECIMAL(14,4)) ""Heel"",
-		                                    CAST(t0.""Draft"" AS DECIMAL(14,4)) ""Draft"",
-		                                    CAST(t1.""Power"" AS DECIMAL(14,4)) ""Power"",
-		                                    CAST(t1.DGO AS DECIMAL(14,4)) ""DGO"",
-		                                    CAST(t1.LFO AS DECIMAL(14,4)) ""LFO"",
-		                                    CAST(t1.HFO AS DECIMAL(14,4)) ""HFO"",
-		                                    CAST(t1.LPG_P AS DECIMAL(14,4)) ""LPG_P"",
-		                                    CAST(t1.LPG_B AS DECIMAL(14,4)) ""LPG_B"",
-		                                    CAST(t1.LNG AS DECIMAL(14,4)) ""LNG"",
-		                                    CAST(t1.""Methanol"" AS DECIMAL(14,4)) ""Methanol"",
-		                                    CAST(t1.""Ethanol"" AS DECIMAL(14,4)) ""Ethanol""
-	                                    FROM
-		                                    ""vesselinfo"" t0,
-		                                    ""energy_totalindicator"" t1,
-		                                    ""energy_prediction"" t2
-	                                    WHERE
-		                                    NVL(t0.""delete_time"", TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')) = TO_TIMESTAMP('1949-10-01', 'YYYY-MM-DD')
-		                                    AND t0.SN = t1.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime""
-		                                    AND t0.SN = t2.""Number""
-		                                    AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime""
-		                                    AND t0.""GroundSpeed"" > 0
-		                                    AND t1.""Number"" = '{0}'
-		                                    AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP('{1}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND t1.""ReceiveDatetime"" < TO_TIMESTAMP('{2}', 'YYYY-MM-DD HH24:MI:SS')
-		                                    AND ABS(t2.""Ethanol"" - t1.""Ethanol"") / DECODE(t2.""Ethanol"", 0, 1) > 0.8
-	                                    ) t
-                                    ORDER BY
-	                                    t.""ReceiveDatetime""", number, dateFrom.ToString("yyyy-MM-dd 00:00:00"), dateTo.ToString("yyyy-MM-dd 00:00:00"));
+	* 
+FROM
+	(
+	SELECT
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) ""ReceiveDatetime"",
+		CAST( AVG( t0.""WaterSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""WaterSpeed"",
+		CAST( AVG( t0.""GroundSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""GroundSpeed"",
+		CAST( AVG( t0.""Trim"" ) AS DECIMAL ( 14, 4 ) ) ""Trim"",
+		CAST( AVG( t0.""Heel"" ) AS DECIMAL ( 14, 4 ) ) ""Heel"",
+		CAST( AVG( t0.""Draft"" ) AS DECIMAL ( 14, 4 ) ) ""Draft"",
+		CAST( AVG( t1.""Power"" ) AS DECIMAL ( 14, 4 ) ) ""Power"",
+		CAST( AVG( t1.DGO ) AS DECIMAL ( 14, 4 ) ) ""DGO"",
+		CAST( AVG( t1.LFO ) AS DECIMAL ( 14, 4 ) ) ""LFO"",
+		CAST( AVG( t1.HFO ) AS DECIMAL ( 14, 4 ) ) ""HFO"",
+		CAST( AVG( t1.LPG_P ) AS DECIMAL ( 14, 4 ) ) ""LPG_P"",
+		CAST( AVG( t1.LPG_B ) AS DECIMAL ( 14, 4 ) ) ""LPG_B"",
+		CAST( AVG( t1.LNG ) AS DECIMAL ( 14, 4 ) ) ""LNG"",
+		CAST( AVG( t1.""Methanol"" ) AS DECIMAL ( 14, 4 ) ) ""Methanol"",
+		CAST( AVG( t1.""Ethanol"" ) AS DECIMAL ( 14, 4 ) ) ""Ethanol"" 
+	FROM
+		""vesselinfo"" t0,
+		""energy_totalindicator"" t1,
+		""energy_prediction"" t2 
+	WHERE
+		NVL( t0.""delete_time"", TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) ) = TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) 
+		AND t0.SN = t1.""Number"" 
+		AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime"" 
+		AND t0.SN = t2.""Number"" 
+		AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime"" 
+		AND t0.""GroundSpeed"" > 0 
+		AND t1.""Number"" = '{0}' 
+		AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP( '{1}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""ReceiveDatetime"" < TO_TIMESTAMP( '{2}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""Power"" > 0.5 
+		AND t1.""Rpm"" > 0.5 
+		AND ABS( t2.DGO - t1.DGO ) / DECODE( t2.DGO, 0, 1 ) > 0.8 
+	GROUP BY
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) UNION
+	SELECT
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) ""ReceiveDatetime"",
+		CAST( AVG( t0.""WaterSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""WaterSpeed"",
+		CAST( AVG( t0.""GroundSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""GroundSpeed"",
+		CAST( AVG( t0.""Trim"" ) AS DECIMAL ( 14, 4 ) ) ""Trim"",
+		CAST( AVG( t0.""Heel"" ) AS DECIMAL ( 14, 4 ) ) ""Heel"",
+		CAST( AVG( t0.""Draft"" ) AS DECIMAL ( 14, 4 ) ) ""Draft"",
+		CAST( AVG( t1.""Power"" ) AS DECIMAL ( 14, 4 ) ) ""Power"",
+		CAST( AVG( t1.DGO ) AS DECIMAL ( 14, 4 ) ) ""DGO"",
+		CAST( AVG( t1.LFO ) AS DECIMAL ( 14, 4 ) ) ""LFO"",
+		CAST( AVG( t1.HFO ) AS DECIMAL ( 14, 4 ) ) ""HFO"",
+		CAST( AVG( t1.LPG_P ) AS DECIMAL ( 14, 4 ) ) ""LPG_P"",
+		CAST( AVG( t1.LPG_B ) AS DECIMAL ( 14, 4 ) ) ""LPG_B"",
+		CAST( AVG( t1.LNG ) AS DECIMAL ( 14, 4 ) ) ""LNG"",
+		CAST( AVG( t1.""Methanol"" ) AS DECIMAL ( 14, 4 ) ) ""Methanol"",
+		CAST( AVG( t1.""Ethanol"" ) AS DECIMAL ( 14, 4 ) ) ""Ethanol"" 
+	FROM
+		""vesselinfo"" t0,
+		""energy_totalindicator"" t1,
+		""energy_prediction"" t2 
+	WHERE
+		NVL( t0.""delete_time"", TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) ) = TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) 
+		AND t0.SN = t1.""Number"" 
+		AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime"" 
+		AND t0.SN = t2.""Number"" 
+		AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime"" 
+		AND t0.""GroundSpeed"" > 0 
+		AND t1.""Number"" = '{0}' 
+		AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP( '{1}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""ReceiveDatetime"" < TO_TIMESTAMP( '{2}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""Power"" > 0.5 
+		AND t1.""Rpm"" > 0.5 
+		AND ABS( t2.LFO - t1.LFO ) / DECODE( t2.LFO, 0, 1 ) > 0.8 
+	GROUP BY
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) UNION
+	SELECT
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) ""ReceiveDatetime"",
+		CAST( AVG( t0.""WaterSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""WaterSpeed"",
+		CAST( AVG( t0.""GroundSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""GroundSpeed"",
+		CAST( AVG( t0.""Trim"" ) AS DECIMAL ( 14, 4 ) ) ""Trim"",
+		CAST( AVG( t0.""Heel"" ) AS DECIMAL ( 14, 4 ) ) ""Heel"",
+		CAST( AVG( t0.""Draft"" ) AS DECIMAL ( 14, 4 ) ) ""Draft"",
+		CAST( AVG( t1.""Power"" ) AS DECIMAL ( 14, 4 ) ) ""Power"",
+		CAST( AVG( t1.DGO ) AS DECIMAL ( 14, 4 ) ) ""DGO"",
+		CAST( AVG( t1.LFO ) AS DECIMAL ( 14, 4 ) ) ""LFO"",
+		CAST( AVG( t1.HFO ) AS DECIMAL ( 14, 4 ) ) ""HFO"",
+		CAST( AVG( t1.LPG_P ) AS DECIMAL ( 14, 4 ) ) ""LPG_P"",
+		CAST( AVG( t1.LPG_B ) AS DECIMAL ( 14, 4 ) ) ""LPG_B"",
+		CAST( AVG( t1.LNG ) AS DECIMAL ( 14, 4 ) ) ""LNG"",
+		CAST( AVG( t1.""Methanol"" ) AS DECIMAL ( 14, 4 ) ) ""Methanol"",
+		CAST( AVG( t1.""Ethanol"" ) AS DECIMAL ( 14, 4 ) ) ""Ethanol"" 
+	FROM
+		""vesselinfo"" t0,
+		""energy_totalindicator"" t1,
+		""energy_prediction"" t2 
+	WHERE
+		NVL( t0.""delete_time"", TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) ) = TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) 
+		AND t0.SN = t1.""Number"" 
+		AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime"" 
+		AND t0.SN = t2.""Number"" 
+		AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime"" 
+		AND t0.""GroundSpeed"" > 0 
+		AND t1.""Number"" = '{0}' 
+		AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP( '{1}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""ReceiveDatetime"" < TO_TIMESTAMP( '{2}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""Power"" > 0.5 
+		AND t1.""Rpm"" > 0.5 
+		AND ABS( t2.HFO - t1.HFO ) / DECODE( t2.HFO, 0, 1 ) > 0.8 
+	GROUP BY
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) UNION
+	SELECT
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) ""ReceiveDatetime"",
+		CAST( AVG( t0.""WaterSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""WaterSpeed"",
+		CAST( AVG( t0.""GroundSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""GroundSpeed"",
+		CAST( AVG( t0.""Trim"" ) AS DECIMAL ( 14, 4 ) ) ""Trim"",
+		CAST( AVG( t0.""Heel"" ) AS DECIMAL ( 14, 4 ) ) ""Heel"",
+		CAST( AVG( t0.""Draft"" ) AS DECIMAL ( 14, 4 ) ) ""Draft"",
+		CAST( AVG( t1.""Power"" ) AS DECIMAL ( 14, 4 ) ) ""Power"",
+		CAST( AVG( t1.DGO ) AS DECIMAL ( 14, 4 ) ) ""DGO"",
+		CAST( AVG( t1.LFO ) AS DECIMAL ( 14, 4 ) ) ""LFO"",
+		CAST( AVG( t1.HFO ) AS DECIMAL ( 14, 4 ) ) ""HFO"",
+		CAST( AVG( t1.LPG_P ) AS DECIMAL ( 14, 4 ) ) ""LPG_P"",
+		CAST( AVG( t1.LPG_B ) AS DECIMAL ( 14, 4 ) ) ""LPG_B"",
+		CAST( AVG( t1.LNG ) AS DECIMAL ( 14, 4 ) ) ""LNG"",
+		CAST( AVG( t1.""Methanol"" ) AS DECIMAL ( 14, 4 ) ) ""Methanol"",
+		CAST( AVG( t1.""Ethanol"" ) AS DECIMAL ( 14, 4 ) ) ""Ethanol"" 
+	FROM
+		""vesselinfo"" t0,
+		""energy_totalindicator"" t1,
+		""energy_prediction"" t2 
+	WHERE
+		NVL( t0.""delete_time"", TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) ) = TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) 
+		AND t0.SN = t1.""Number"" 
+		AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime"" 
+		AND t0.SN = t2.""Number"" 
+		AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime"" 
+		AND t0.""GroundSpeed"" > 0 
+		AND t1.""Number"" = '{0}' 
+		AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP( '{1}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""ReceiveDatetime"" < TO_TIMESTAMP( '{2}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""Power"" > 0.5 
+		AND t1.""Rpm"" > 0.5 
+		AND ABS( t2.LPG_P - t1.LPG_P ) / DECODE( t2.LPG_P, 0, 1 ) > 0.8 
+	GROUP BY
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) UNION
+	SELECT
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) ""ReceiveDatetime"",
+		CAST( AVG( t0.""WaterSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""WaterSpeed"",
+		CAST( AVG( t0.""GroundSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""GroundSpeed"",
+		CAST( AVG( t0.""Trim"" ) AS DECIMAL ( 14, 4 ) ) ""Trim"",
+		CAST( AVG( t0.""Heel"" ) AS DECIMAL ( 14, 4 ) ) ""Heel"",
+		CAST( AVG( t0.""Draft"" ) AS DECIMAL ( 14, 4 ) ) ""Draft"",
+		CAST( AVG( t1.""Power"" ) AS DECIMAL ( 14, 4 ) ) ""Power"",
+		CAST( AVG( t1.DGO ) AS DECIMAL ( 14, 4 ) ) ""DGO"",
+		CAST( AVG( t1.LFO ) AS DECIMAL ( 14, 4 ) ) ""LFO"",
+		CAST( AVG( t1.HFO ) AS DECIMAL ( 14, 4 ) ) ""HFO"",
+		CAST( AVG( t1.LPG_P ) AS DECIMAL ( 14, 4 ) ) ""LPG_P"",
+		CAST( AVG( t1.LPG_B ) AS DECIMAL ( 14, 4 ) ) ""LPG_B"",
+		CAST( AVG( t1.LNG ) AS DECIMAL ( 14, 4 ) ) ""LNG"",
+		CAST( AVG( t1.""Methanol"" ) AS DECIMAL ( 14, 4 ) ) ""Methanol"",
+		CAST( AVG( t1.""Ethanol"" ) AS DECIMAL ( 14, 4 ) ) ""Ethanol"" 
+	FROM
+		""vesselinfo"" t0,
+		""energy_totalindicator"" t1,
+		""energy_prediction"" t2 
+	WHERE
+		NVL( t0.""delete_time"", TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) ) = TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) 
+		AND t0.SN = t1.""Number"" 
+		AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime"" 
+		AND t0.SN = t2.""Number"" 
+		AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime"" 
+		AND t0.""GroundSpeed"" > 0 
+		AND t1.""Number"" = '{0}' 
+		AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP( '{1}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""ReceiveDatetime"" < TO_TIMESTAMP( '{2}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""Power"" > 0.5 
+		AND t1.""Rpm"" > 0.5 
+		AND ABS( t2.LPG_B - t1.LPG_B ) / DECODE( t2.LPG_B, 0, 1 ) > 0.8 
+	GROUP BY
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) UNION
+	SELECT
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) ""ReceiveDatetime"",
+		CAST( AVG( t0.""WaterSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""WaterSpeed"",
+		CAST( AVG( t0.""GroundSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""GroundSpeed"",
+		CAST( AVG( t0.""Trim"" ) AS DECIMAL ( 14, 4 ) ) ""Trim"",
+		CAST( AVG( t0.""Heel"" ) AS DECIMAL ( 14, 4 ) ) ""Heel"",
+		CAST( AVG( t0.""Draft"" ) AS DECIMAL ( 14, 4 ) ) ""Draft"",
+		CAST( AVG( t1.""Power"" ) AS DECIMAL ( 14, 4 ) ) ""Power"",
+		CAST( AVG( t1.DGO ) AS DECIMAL ( 14, 4 ) ) ""DGO"",
+		CAST( AVG( t1.LFO ) AS DECIMAL ( 14, 4 ) ) ""LFO"",
+		CAST( AVG( t1.HFO ) AS DECIMAL ( 14, 4 ) ) ""HFO"",
+		CAST( AVG( t1.LPG_P ) AS DECIMAL ( 14, 4 ) ) ""LPG_P"",
+		CAST( AVG( t1.LPG_B ) AS DECIMAL ( 14, 4 ) ) ""LPG_B"",
+		CAST( AVG( t1.LNG ) AS DECIMAL ( 14, 4 ) ) ""LNG"",
+		CAST( AVG( t1.""Methanol"" ) AS DECIMAL ( 14, 4 ) ) ""Methanol"",
+		CAST( AVG( t1.""Ethanol"" ) AS DECIMAL ( 14, 4 ) ) ""Ethanol"" 
+	FROM
+		""vesselinfo"" t0,
+		""energy_totalindicator"" t1,
+		""energy_prediction"" t2 
+	WHERE
+		NVL( t0.""delete_time"", TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) ) = TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) 
+		AND t0.SN = t1.""Number"" 
+		AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime"" 
+		AND t0.SN = t2.""Number"" 
+		AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime"" 
+		AND t0.""GroundSpeed"" > 0 
+		AND t1.""Number"" = '{0}' 
+		AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP( '{1}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""ReceiveDatetime"" < TO_TIMESTAMP( '{2}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""Power"" > 0.5 
+		AND t1.""Rpm"" > 0.5 
+		AND ABS( t2.LNG - t1.LNG ) / DECODE( t2.LNG, 0, 1 ) > 0.8 
+	GROUP BY
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) UNION
+	SELECT
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) ""ReceiveDatetime"",
+		CAST( AVG( t0.""WaterSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""WaterSpeed"",
+		CAST( AVG( t0.""GroundSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""GroundSpeed"",
+		CAST( AVG( t0.""Trim"" ) AS DECIMAL ( 14, 4 ) ) ""Trim"",
+		CAST( AVG( t0.""Heel"" ) AS DECIMAL ( 14, 4 ) ) ""Heel"",
+		CAST( AVG( t0.""Draft"" ) AS DECIMAL ( 14, 4 ) ) ""Draft"",
+		CAST( AVG( t1.""Power"" ) AS DECIMAL ( 14, 4 ) ) ""Power"",
+		CAST( AVG( t1.DGO ) AS DECIMAL ( 14, 4 ) ) ""DGO"",
+		CAST( AVG( t1.LFO ) AS DECIMAL ( 14, 4 ) ) ""LFO"",
+		CAST( AVG( t1.HFO ) AS DECIMAL ( 14, 4 ) ) ""HFO"",
+		CAST( AVG( t1.LPG_P ) AS DECIMAL ( 14, 4 ) ) ""LPG_P"",
+		CAST( AVG( t1.LPG_B ) AS DECIMAL ( 14, 4 ) ) ""LPG_B"",
+		CAST( AVG( t1.LNG ) AS DECIMAL ( 14, 4 ) ) ""LNG"",
+		CAST( AVG( t1.""Methanol"" ) AS DECIMAL ( 14, 4 ) ) ""Methanol"",
+		CAST( AVG( t1.""Ethanol"" ) AS DECIMAL ( 14, 4 ) ) ""Ethanol"" 
+	FROM
+		""vesselinfo"" t0,
+		""energy_totalindicator"" t1,
+		""energy_prediction"" t2 
+	WHERE
+		NVL( t0.""delete_time"", TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) ) = TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) 
+		AND t0.SN = t1.""Number"" 
+		AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime"" 
+		AND t0.SN = t2.""Number"" 
+		AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime"" 
+		AND t0.""GroundSpeed"" > 0 
+		AND t1.""Number"" = '{0}' 
+		AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP( '{1}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""ReceiveDatetime"" < TO_TIMESTAMP( '{2}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""Power"" > 0.5 
+		AND t1.""Rpm"" > 0.5 
+		AND ABS( t2.""Methanol"" - t1.""Methanol"" ) / DECODE( t2.""Methanol"", 0, 1 ) > 0.8 
+	GROUP BY
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) UNION
+	SELECT
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) ""ReceiveDatetime"",
+		CAST( AVG( t0.""WaterSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""WaterSpeed"",
+		CAST( AVG( t0.""GroundSpeed"" ) AS DECIMAL ( 14, 4 ) ) ""GroundSpeed"",
+		CAST( AVG( t0.""Trim"" ) AS DECIMAL ( 14, 4 ) ) ""Trim"",
+		CAST( AVG( t0.""Heel"" ) AS DECIMAL ( 14, 4 ) ) ""Heel"",
+		CAST( AVG( t0.""Draft"" ) AS DECIMAL ( 14, 4 ) ) ""Draft"",
+		CAST( AVG( t1.""Power"" ) AS DECIMAL ( 14, 4 ) ) ""Power"",
+		CAST( AVG( t1.DGO ) AS DECIMAL ( 14, 4 ) ) ""DGO"",
+		CAST( AVG( t1.LFO ) AS DECIMAL ( 14, 4 ) ) ""LFO"",
+		CAST( AVG( t1.HFO ) AS DECIMAL ( 14, 4 ) ) ""HFO"",
+		CAST( AVG( t1.LPG_P ) AS DECIMAL ( 14, 4 ) ) ""LPG_P"",
+		CAST( AVG( t1.LPG_B ) AS DECIMAL ( 14, 4 ) ) ""LPG_B"",
+		CAST( AVG( t1.LNG ) AS DECIMAL ( 14, 4 ) ) ""LNG"",
+		CAST( AVG( t1.""Methanol"" ) AS DECIMAL ( 14, 4 ) ) ""Methanol"",
+		CAST( AVG( t1.""Ethanol"" ) AS DECIMAL ( 14, 4 ) ) ""Ethanol"" 
+	FROM
+		""vesselinfo"" t0,
+		""energy_totalindicator"" t1,
+		""energy_prediction"" t2 
+	WHERE
+		NVL( t0.""delete_time"", TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) ) = TO_TIMESTAMP( '1949-10-01', 'YYYY-MM-DD' ) 
+		AND t0.SN = t1.""Number"" 
+		AND t0.""ReceiveDatetime"" = t1.""ReceiveDatetime"" 
+		AND t0.SN = t2.""Number"" 
+		AND t0.""ReceiveDatetime"" = t2.""ReceiveDatetime"" 
+		AND t0.""GroundSpeed"" > 0 
+		AND t1.""Number"" = '{0}' 
+		AND t1.""ReceiveDatetime"" >= TO_TIMESTAMP( '{1}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""ReceiveDatetime"" < TO_TIMESTAMP( '{2}', 'YYYY-MM-DD HH24:MI:SS' ) 
+		AND t1.""Power"" > 0.5 
+		AND t1.""Rpm"" > 0.5 
+		AND ABS( t2.""Ethanol"" - t1.""Ethanol"" ) / DECODE( t2.""Ethanol"", 0, 1 ) > 0.8 
+	GROUP BY
+		TRUNC( t0.""ReceiveDatetime"", 'DD' ) 
+	) t 
+ORDER BY
+	t.""ReceiveDatetime""", number, dateFrom.ToString("yyyy-MM-dd 00:00:00"), dateTo.ToString("yyyy-MM-dd 00:00:00"));
                     var abnormalData = await _sqlRepository.ExecuteDataTable(sbSql.ToString());
 
                     sbSql.Clear();
@@ -2755,7 +2748,7 @@ namespace hmt_energy_csharp.VesselInfos
                     var fms1 = new List<FuelConsumption>();
                     foreach (DataRow dr in PUs.Rows)
                     {
-                        foreach (DataColumn dc in PUs.Rows)
+                        foreach (DataColumn dc in PUs.Columns)
                         {
                             if (dc.ColumnName != "DeviceType")
                             {
@@ -2763,8 +2756,8 @@ namespace hmt_energy_csharp.VesselInfos
                                 {
                                     DeviceType = dr["DeviceType"].ToString(),
                                     FuelType = dc.ColumnName,
-                                    Cons = Convert.ToDecimal(dr[dc.ColumnName] is DBNull ? 0 : dr[dc.ColumnName]),
-                                    DeviceNo = dr["DeviceType"].ToString() == "me" ? (lang == "en_US" ? "Main Engine" : "主机") : dr["DeviceType"].ToString() == "blr" ? (lang == "en_US" ? "Main Engine" : "Boiler") : (lang == "en_US" ? "Main Engine" : "Auxiliary Engine")
+                                    Cons = Convert.ToDecimal(StringHelper.GetDataColumnValue(dr[dc.ColumnName])),
+                                    DeviceNo = dr["DeviceType"].ToString() == "me" ? (lang == "en_US" ? "Main Engine" : "主机") : dr["DeviceType"].ToString() == "blr" ? (lang == "en_US" ? "Boiler" : "锅炉") : (lang == "en_US" ? "Auxiliary Engine" : "辅机")
                                 });
                             }
                         }
@@ -2946,23 +2939,23 @@ namespace hmt_energy_csharp.VesselInfos
 
                     try
                     {
-                        var dgopNM = Convert.ToDouble(baseData.Rows[0]["AVGDGOpNM"]);
-                        var lfopNM = Convert.ToDouble(baseData.Rows[0]["AVGLFOpNM"]);
-                        var hfopNM = Convert.ToDouble(baseData.Rows[0]["AVGHFOpNM"]);
-                        var lpg_ppNM = Convert.ToDouble(baseData.Rows[0]["AVGLPG_PpNM"]);
-                        var lpg_bpNM = Convert.ToDouble(baseData.Rows[0]["AVGLPG_BpNM"]);
-                        var lngpNM = Convert.ToDouble(baseData.Rows[0]["AVGLNGpNM"]);
-                        var methanolpNM = Convert.ToDouble(baseData.Rows[0]["AVGMethanolpNM"]);
-                        var ethanolpNM = Convert.ToDouble(baseData.Rows[0]["AVGEthanolpNM"]);
+                        var dgopNM = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGDGOpNM"]));
+                        var lfopNM = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGLFOpNM"]));
+                        var hfopNM = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGHFOpNM"]));
+                        var lpg_ppNM = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGLPG_PpNM"]));
+                        var lpg_bpNM = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGLPG_BpNM"]));
+                        var lngpNM = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGLNGpNM"]));
+                        var methanolpNM = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGMethanolpNM"]));
+                        var ethanolpNM = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGEthanolpNM"]));
 
-                        var dgopPower = Convert.ToDouble(baseData.Rows[0]["AVGDGOpPower"]);
-                        var lfopPower = Convert.ToDouble(baseData.Rows[0]["AVGLFOpPower"]);
-                        var hfopPower = Convert.ToDouble(baseData.Rows[0]["AVGHFOpPower"]);
-                        var lpg_ppPower = Convert.ToDouble(baseData.Rows[0]["AVGLPG_PpPower"]);
-                        var lpg_bpPower = Convert.ToDouble(baseData.Rows[0]["AVGLPG_BpPower"]);
-                        var lngpPower = Convert.ToDouble(baseData.Rows[0]["AVGLNGpPower"]);
-                        var methanolpPower = Convert.ToDouble(baseData.Rows[0]["AVGMethanolpPower"]);
-                        var ethanolpPower = Convert.ToDouble(baseData.Rows[0]["AVGEthanolpPower"]);
+                        var dgopPower = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGDGOpPower"]));
+                        var lfopPower = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGLFOpPower"]));
+                        var hfopPower = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGHFOpPower"]));
+                        var lpg_ppPower = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGLPG_PpPower"]));
+                        var lpg_bpPower = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGLPG_BpPower"]));
+                        var lngpPower = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGLNGpPower"]));
+                        var methanolpPower = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGMethanolpPower"]));
+                        var ethanolpPower = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["AVGEthanolpPower"]));
 
                         var ecValue = (hfopPower / (criteriaDto.HFO / criteriaDto.Power) + hfopNM / (criteriaDto.HFO / criteriaDto.Speed)) / 2;
                         if (ecValue > 0.99 && ecValue <= 1.09)
@@ -2996,15 +2989,15 @@ namespace hmt_energy_csharp.VesselInfos
                             AVGEthanol = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["AVGEthanol"],
                             AVGPower = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["AVGPower"],
                             RunTime = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["RunTime"],
-                            DGOACC = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["DGOACC"],
-                            LFOACC = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["LFOACC"],
-                            HFOACC = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["HFOACC"],
-                            LPG_PACC = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["LPG_PACC"],
-                            LPG_BACC = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["LPG_BACC"],
-                            LNGACC = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["LNGACC"],
-                            MethanolACC = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["MethanolACC"],
-                            EthanolACC = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["EthanolACC"],
-                            CalcSpeedGrd = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["CalcSpeedGrd"],
+                            DGOACC = DGOC,
+                            LFOACC = LFOC,
+                            HFOACC = HFOC,
+                            LPG_PACC = LPG_PC,
+                            LPG_BACC = LPG_BC,
+                            LNGACC = LNGC,
+                            MethanolACC = MethanolC,
+                            EthanolACC = EthanolC,
+                            CalcSpeedGrd = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["AVGSpeedGrd"],
                             AVGDGOpNM = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["AVGDGOpNM"],
                             AVGLFOpNM = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["AVGLFOpNM"],
                             AVGHFOpNM = baseData.Rows.Count <= 0 ? 0 : baseData.Rows[0]["AVGHFOpNM"],

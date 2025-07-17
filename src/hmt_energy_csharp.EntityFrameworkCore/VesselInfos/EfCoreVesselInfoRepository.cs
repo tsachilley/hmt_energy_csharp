@@ -357,5 +357,33 @@ namespace hmt_energy_csharp.VesselInfos
                     connection.Close();
             }
         }
+
+        public async Task<DataTable> ExecuteDataTable(string sql)
+        {
+            var connection = await GetDbConnectionAsync();
+            var needClose = false;
+            try
+            {
+                if (connection.State == ConnectionState.Closed)
+                {
+                    needClose = true;
+                    connection.Open();
+                }
+                var dataReader = await connection.ExecuteReaderAsync(sql);
+                var dataTable = new DataTable();
+                dataTable.Load(dataReader);
+                return dataTable;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, MethodBase.GetCurrentMethod().DeclaringType.FullName);
+                return null;
+            }
+            finally
+            {
+                if (needClose)
+                    connection.Close();
+            }
+        }
     }
 }

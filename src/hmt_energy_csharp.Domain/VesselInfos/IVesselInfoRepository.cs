@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -29,5 +30,7 @@ namespace hmt_energy_csharp.VesselInfos
         Task<IEnumerable<T>> QueryFromSql<T>(string sql);
 
         Task<AllInfo> GetLatestInfosAsync(string number, DateTime receiveDatetime);
+
+        Task<DataTable> ExecuteDataTable(string sql);
     }
 }
