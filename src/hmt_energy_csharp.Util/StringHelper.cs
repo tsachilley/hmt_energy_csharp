@@ -147,5 +147,13 @@ namespace hmt_energy_csharp
 
             return cmdBytes;
         }
+
+        public static object? GetDataColumnValue(object dCol)
+        {
+            if (dCol is DBNull)
+                return null;
+            else
+                return dCol;
+        }
     }
 }
