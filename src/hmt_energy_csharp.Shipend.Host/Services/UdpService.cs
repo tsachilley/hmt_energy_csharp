@@ -81,7 +81,7 @@ namespace hmt_energy_csharp.Services
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
 			#region 展示数据进行初始化
-			var number = _configuration["ShipInfo:SN"] ?? "NDY1274";
+			var number = _configuration["ShipInfo:SN"] ?? "SAD1";
 			var SN = number;
 			//需单独初始化 否则不访问船端页面不会进行赋值
 			if (!StaticEntities.ShowEntities.Vessels.Any(t => t.SN == number))
@@ -127,7 +127,7 @@ namespace hmt_energy_csharp.Services
 
 			#region 启动平板UDP客户端
 
-			tabletUdpClient = new TabletUdpClient(_configuration.GetSection("UdpTabletClient")["Address"], Convert.ToInt32(_configuration.GetSection("UdpTabletClient")["Port"]), _configuration["ShipInfo:SN"] ?? "NDY1274");
+			tabletUdpClient = new TabletUdpClient(_configuration.GetSection("UdpTabletClient")["Address"], Convert.ToInt32(_configuration.GetSection("UdpTabletClient")["Port"]), _configuration["ShipInfo:SN"] ?? "SAD1");
 			_ = Task.Run(async () =>
 			{
 				while (!tabletUdpClient._stop)
@@ -284,7 +284,7 @@ namespace hmt_energy_csharp.Services
 
 		protected override void OnStarted()
 		{
-			var number = _configuration["ShipInfo:SN"] ?? "NDY1274";
+			var number = _configuration["ShipInfo:SN"] ?? "SAD1";
 			Log.Information($"{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UDP服务器信息=>{Endpoint}");
 
 			// Start receive datagrams
@@ -372,7 +372,7 @@ namespace hmt_energy_csharp.Services
 
 						try
 						{
-							var number = _configuration["ShipInfo:SN"] ?? "NDY1274";
+							var number = _configuration["ShipInfo:SN"] ?? "SAD1";
 							var rtInfos = new
 							{
 								vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == number),
@@ -503,7 +503,7 @@ namespace hmt_energy_csharp.Services
 		//初始化eca、js 启动eca预警任务
 		private void InitECA()
 		{
-			var number = _configuration["ShipInfo:SN"] ?? "NDY1274";
+			var number = _configuration["ShipInfo:SN"] ?? "SAD1";
 			try
 			{
 				JECA = File.ReadAllText("Geo/ECA.json").ToJObject();
