@@ -1,33 +1,12 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using hmt_energy_csharp.Dtos;
-using hmt_energy_csharp.Energy.Batteries;
 using hmt_energy_csharp.Energy.Criterias;
 using hmt_energy_csharp.Energy.Flowmeters;
-using hmt_energy_csharp.Energy.Generators;
-using hmt_energy_csharp.Energy.LiquidLevels;
 using hmt_energy_csharp.Energy.Shafts;
-using hmt_energy_csharp.Energy.SternSealings;
-using hmt_energy_csharp.Energy.SupplyUnits;
-using hmt_energy_csharp.Engineroom.CompositeBoilers;
-using hmt_energy_csharp.Engineroom.CompressedAirSupplies;
-using hmt_energy_csharp.Engineroom.CoolingFreshWaters;
-using hmt_energy_csharp.Engineroom.CoolingSeaWaters;
-using hmt_energy_csharp.Engineroom.CoolingWaters;
-using hmt_energy_csharp.Engineroom.CylinderLubOils;
-using hmt_energy_csharp.Engineroom.ExhaustGases;
-using hmt_energy_csharp.Engineroom.FOs;
-using hmt_energy_csharp.Engineroom.FOSupplyUnits;
-using hmt_energy_csharp.Engineroom.LubOilPurifyings;
-using hmt_energy_csharp.Engineroom.LubOils;
-using hmt_energy_csharp.Engineroom.MainGeneratorSets;
-using hmt_energy_csharp.Engineroom.MainSwitchboards;
-using hmt_energy_csharp.Engineroom.MERemoteControls;
-using hmt_energy_csharp.Engineroom.Miscellaneouses;
-using hmt_energy_csharp.Engineroom.ScavengeAirs;
-using hmt_energy_csharp.Engineroom.ShaftClutches;
 using hmt_energy_csharp.Protos;
 using hmt_energy_csharp.VesselInfos;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
@@ -44,12 +23,14 @@ public class NavigationDataService : NavigationData.NavigationDataBase
     private readonly ILogger<NavigationDataService> _logger;
     private readonly IVesselInfoService _vesselInfoService;
     private readonly IConsulService _consulService;
+    private readonly IConfiguration _configuration;
 
-    public NavigationDataService(ILogger<NavigationDataService> logger, IVesselInfoService vesselInfoService, IConsulService consulService)
+    public NavigationDataService(ILogger<NavigationDataService> logger, IVesselInfoService vesselInfoService, IConsulService consulService, IConfiguration configuration)
     {
         _logger = logger;
         _vesselInfoService = vesselInfoService;
         _consulService = consulService;
+        _configuration = configuration;
     }
 
     public override async Task<NavigationDataRealTimeSingleResponse> NavigationDataRealTimeSingle(NavigationDataRealTimeSingleRequest request, ServerCallContext context)
@@ -58,150 +39,54 @@ public class NavigationDataService : NavigationData.NavigationDataBase
         try
         {
             var result = new object();
-            if (StaticEntities.ShowEntities.Vessels.Any(t => t.SN == request.Number))
+
+            #region 展示数据进行初始化
+            var number = request.Number;
+            //需单独初始化 否则不访问船端页面不会进行赋值
+            if (!StaticEntities.ShowEntities.Vessels.Any(t => t.SN == number))
             {
-                switch (request.Type)
-                {
-                    case "generator":
-                        var gDtos = StaticEntities.ShowEntities.Generators.FirstOrDefault(t => t.Number == request.Number).GeneratorDtos;
-                        foreach (var dto in gDtos)
-                        {
-                            foreach (var prop in dto.GetType().GetProperties())
-                            {
-                                if (prop.PropertyType == typeof(double) ||
-                                    prop.PropertyType == typeof(float) ||
-                                    prop.PropertyType == typeof(decimal) ||
-                                    prop.PropertyType == typeof(double?) ||
-                                    prop.PropertyType == typeof(float?) ||
-                                    prop.PropertyType == typeof(decimal?))
-                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
-                            }
-                        }
-                        result = gDtos;
-                        break;
+                var lastestVessel = await _vesselInfoService.GetLatestAsync(number);
+                StaticEntities.ShowEntities.Vessels.Add(lastestVessel);
+                StaticEntities.ShowEntities.Flowmeters.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Batteries.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Generators.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.LiquidLevels.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.SupplyUnits.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Shafts.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.SternSealings.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.PowerUnits.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.TotalIndicators.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Predictions.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.AssistantDecisions.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CompositeBoilers.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CompressedAirSupplies.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CoolingFreshWaters.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CoolingSeaWaters.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CoolingWaters.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.CylinderLubOils.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.ExhaustGases.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.FOs.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.FOSupplyUnits.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.LubOilPurifyings.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.LubOils.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.MainGeneratorSets.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.MainSwitchboards.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.MERemoteControls.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.Miscellaneouses.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.ScavengeAirs.RemoveAll(t => t.Number == number);
+                StaticEntities.ShowEntities.ShaftClutchs.RemoveAll(t => t.Number == number);
+                await _vesselInfoService.GetLatestInfosAsync(lastestVessel.SN, lastestVessel.ReceiveDatetime);
+            }
 
-                    case "shaft":
-                        var shafts = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == request.Number).ShaftDtos;
-                        foreach (var dto in shafts)
-                        {
-                            foreach (var prop in dto.GetType().GetProperties())
-                            {
-                                if (prop.PropertyType == typeof(double) ||
-                                    prop.PropertyType == typeof(float) ||
-                                    prop.PropertyType == typeof(decimal) ||
-                                    prop.PropertyType == typeof(double?) ||
-                                    prop.PropertyType == typeof(float?) ||
-                                    prop.PropertyType == typeof(decimal?))
-                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
-                            }
-                        }
-                        var stern = StaticEntities.ShowEntities.SternSealings.FirstOrDefault(t => t.Number == request.Number).SternSealingDtos;
-                        foreach (var dto in stern)
-                        {
-                            foreach (var prop in dto.GetType().GetProperties())
-                            {
-                                if (prop.PropertyType == typeof(double) ||
-                                    prop.PropertyType == typeof(float) ||
-                                    prop.PropertyType == typeof(decimal) ||
-                                    prop.PropertyType == typeof(double?) ||
-                                    prop.PropertyType == typeof(float?) ||
-                                    prop.PropertyType == typeof(decimal?))
-                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
-                            }
-                        }
-                        result = new
-                        {
-                            sternSealings = stern,
-                            shafts = shafts
-                        };
-                        break;
+            #endregion
 
-                    case "liquid":
-                        var llDtos = StaticEntities.ShowEntities.LiquidLevels.FirstOrDefault(t => t.Number == request.Number).LiquidLevelDtos;
-                        foreach (var dto in llDtos)
-                        {
-                            foreach (var prop in dto.GetType().GetProperties())
-                            {
-                                if (prop.PropertyType == typeof(double) ||
-                                    prop.PropertyType == typeof(float) ||
-                                    prop.PropertyType == typeof(decimal) ||
-                                    prop.PropertyType == typeof(double?) ||
-                                    prop.PropertyType == typeof(float?) ||
-                                    prop.PropertyType == typeof(decimal?))
-                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
-                            }
-                        }
-                        result = llDtos;
-                        break;
-
-                    case "supply":
-                        var suDtps = StaticEntities.ShowEntities.SupplyUnits.FirstOrDefault(t => t.Number == request.Number).SupplyUnitDtos;
-                        foreach (var dto in suDtps)
-                        {
-                            foreach (var prop in dto.GetType().GetProperties())
-                            {
-                                if (prop.PropertyType == typeof(double) ||
-                                    prop.PropertyType == typeof(float) ||
-                                    prop.PropertyType == typeof(decimal) ||
-                                    prop.PropertyType == typeof(double?) ||
-                                    prop.PropertyType == typeof(float?) ||
-                                    prop.PropertyType == typeof(decimal?))
-                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
-                            }
-                        }
-                        result = suDtps;
-                        break;
-
-                    case "battery":
-                        var bDtos = StaticEntities.ShowEntities.Batteries.FirstOrDefault(t => t.Number == request.Number).BatteryDtos;
-                        foreach (var dto in bDtos)
-                        {
-                            foreach (var prop in dto.GetType().GetProperties())
-                            {
-                                if (prop.PropertyType == typeof(double) ||
-                                    prop.PropertyType == typeof(float) ||
-                                    prop.PropertyType == typeof(decimal) ||
-                                    prop.PropertyType == typeof(double?) ||
-                                    prop.PropertyType == typeof(float?) ||
-                                    prop.PropertyType == typeof(decimal?))
-                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
-                            }
-                        }
-                        result = bDtos;
-                        break;
-
-                    case "ed":
-                        result = await _vesselInfoService.GetEnergyDistributionAsync(request.Number);
-                        break;
-
-                    case "er":
-                        result = new
-                        {
-                            CompositeBoiler = StaticEntities.ShowEntities.CompositeBoilers.FirstOrDefault(t => t.Number == request.Number).CompositeBoilerDtos,
-                            CompressedAirSupply = StaticEntities.ShowEntities.CompressedAirSupplies.FirstOrDefault(t => t.Number == request.Number).CompressedAirSupplyDtos,
-                            CoolingFreshWater = StaticEntities.ShowEntities.CoolingFreshWaters.FirstOrDefault(t => t.Number == request.Number).CoolingFreshWaterDtos,
-                            CoolingSeaWater = StaticEntities.ShowEntities.CoolingSeaWaters.FirstOrDefault(t => t.Number == request.Number).CoolingSeaWaterDtos,
-                            CoolingWater = StaticEntities.ShowEntities.CoolingWaters.FirstOrDefault(t => t.Number == request.Number).CoolingWaterDtos,
-                            CylinderLubOil = StaticEntities.ShowEntities.CylinderLubOils.FirstOrDefault(t => t.Number == request.Number).CylinderLubOilDtos,
-                            ExhaustGas = StaticEntities.ShowEntities.ExhaustGases.FirstOrDefault(t => t.Number == request.Number).ExhaustGasDtos,
-                            FO = StaticEntities.ShowEntities.FOs.FirstOrDefault(t => t.Number == request.Number).FODtos,
-                            FOSupplyUnit = StaticEntities.ShowEntities.FOSupplyUnits.FirstOrDefault(t => t.Number == request.Number).FOSupplyUnitDtos,
-                            LubOilPurifying = StaticEntities.ShowEntities.LubOilPurifyings.FirstOrDefault(t => t.Number == request.Number).LubOilPurifyingDtos,
-                            LubOil = StaticEntities.ShowEntities.LubOils.FirstOrDefault(t => t.Number == request.Number).LubOilDtos,
-                            MainGeneratorSet = StaticEntities.ShowEntities.MainGeneratorSets.FirstOrDefault(t => t.Number == request.Number).MainGeneratorSetDtos,
-                            MainSwitchboard = StaticEntities.ShowEntities.MainSwitchboards.FirstOrDefault(t => t.Number == request.Number).MainSwitchboardDtos,
-                            MERemoteControl = StaticEntities.ShowEntities.MERemoteControls.FirstOrDefault(t => t.Number == request.Number).MERemoteControlDtos,
-                            Miscellaneous = StaticEntities.ShowEntities.Miscellaneouses.FirstOrDefault(t => t.Number == request.Number).MiscellaneousDtos,
-                            ScavengeAir = StaticEntities.ShowEntities.ScavengeAirs.FirstOrDefault(t => t.Number == request.Number).ScavengeAirDtos,
-                            ShaftClutch = StaticEntities.ShowEntities.ShaftClutchs.FirstOrDefault(t => t.Number == request.Number).ShaftClutchDtos,
-                            AssistantDecision = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == request.Number).AssistantDecisionDtos,
-                        };
-                        break;
-
-                    case "ee":
-                    default:
-                        var vesselEntity = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == request.Number);
-                        foreach (var prop in vesselEntity.GetType().GetProperties())
+            switch (request.Type)
+            {
+                case "generator":
+                    var gDtos = StaticEntities.ShowEntities.Generators.FirstOrDefault(t => t.Number == request.Number).GeneratorDtos;
+                    foreach (var dto in gDtos)
+                    {
+                        foreach (var prop in dto.GetType().GetProperties())
                         {
                             if (prop.PropertyType == typeof(double) ||
                                 prop.PropertyType == typeof(float) ||
@@ -209,689 +94,431 @@ public class NavigationDataService : NavigationData.NavigationDataBase
                                 prop.PropertyType == typeof(double?) ||
                                 prop.PropertyType == typeof(float?) ||
                                 prop.PropertyType == typeof(decimal?))
-                                prop.SetValue(vesselEntity, Math.Round(Convert.ToDouble(prop.GetValue(vesselEntity)), 4));
+                                prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
                         }
-                        result = vesselEntity;
-                        var tempResult = result.ToJson().ToJObject();
-                        var fsDtos = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == request.Number).FlowmeterDtos;
-                        var fsDtosClear = new List<FlowmeterDto> {
+                    }
+                    result = gDtos;
+                    break;
+
+                case "shaft":
+                    var shafts = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == request.Number).ShaftDtos;
+                    foreach (var dto in shafts)
+                    {
+                        foreach (var prop in dto.GetType().GetProperties())
+                        {
+                            if (prop.PropertyType == typeof(double) ||
+                                prop.PropertyType == typeof(float) ||
+                                prop.PropertyType == typeof(decimal) ||
+                                prop.PropertyType == typeof(double?) ||
+                                prop.PropertyType == typeof(float?) ||
+                                prop.PropertyType == typeof(decimal?))
+                                prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                        }
+                    }
+                    var stern = StaticEntities.ShowEntities.SternSealings.FirstOrDefault(t => t.Number == request.Number).SternSealingDtos;
+                    foreach (var dto in stern)
+                    {
+                        foreach (var prop in dto.GetType().GetProperties())
+                        {
+                            if (prop.PropertyType == typeof(double) ||
+                                prop.PropertyType == typeof(float) ||
+                                prop.PropertyType == typeof(decimal) ||
+                                prop.PropertyType == typeof(double?) ||
+                                prop.PropertyType == typeof(float?) ||
+                                prop.PropertyType == typeof(decimal?))
+                                prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                        }
+                    }
+                    result = new
+                    {
+                        sternSealings = stern,
+                        shafts = shafts
+                    };
+                    break;
+
+                case "liquid":
+                    var llDtos = StaticEntities.ShowEntities.LiquidLevels.FirstOrDefault(t => t.Number == request.Number).LiquidLevelDtos;
+                    foreach (var dto in llDtos)
+                    {
+                        foreach (var prop in dto.GetType().GetProperties())
+                        {
+                            if (prop.PropertyType == typeof(double) ||
+                                prop.PropertyType == typeof(float) ||
+                                prop.PropertyType == typeof(decimal) ||
+                                prop.PropertyType == typeof(double?) ||
+                                prop.PropertyType == typeof(float?) ||
+                                prop.PropertyType == typeof(decimal?))
+                                prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                        }
+                    }
+                    result = llDtos;
+                    break;
+
+                case "supply":
+                    var suDtps = StaticEntities.ShowEntities.SupplyUnits.FirstOrDefault(t => t.Number == request.Number).SupplyUnitDtos;
+                    foreach (var dto in suDtps)
+                    {
+                        foreach (var prop in dto.GetType().GetProperties())
+                        {
+                            if (prop.PropertyType == typeof(double) ||
+                                prop.PropertyType == typeof(float) ||
+                                prop.PropertyType == typeof(decimal) ||
+                                prop.PropertyType == typeof(double?) ||
+                                prop.PropertyType == typeof(float?) ||
+                                prop.PropertyType == typeof(decimal?))
+                                prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                        }
+                    }
+                    result = suDtps;
+                    break;
+
+                case "battery":
+                    var bDtos = StaticEntities.ShowEntities.Batteries.FirstOrDefault(t => t.Number == request.Number).BatteryDtos;
+                    foreach (var dto in bDtos)
+                    {
+                        foreach (var prop in dto.GetType().GetProperties())
+                        {
+                            if (prop.PropertyType == typeof(double) ||
+                                prop.PropertyType == typeof(float) ||
+                                prop.PropertyType == typeof(decimal) ||
+                                prop.PropertyType == typeof(double?) ||
+                                prop.PropertyType == typeof(float?) ||
+                                prop.PropertyType == typeof(decimal?))
+                                prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                        }
+                    }
+                    result = bDtos;
+                    break;
+
+                case "ed":
+                    result = await _vesselInfoService.GetEnergyDistributionAsync(request.Number);
+                    break;
+
+                case "er":
+                    result = new
+                    {
+                        CompositeBoiler = StaticEntities.ShowEntities.CompositeBoilers.FirstOrDefault(t => t.Number == request.Number).CompositeBoilerDtos,
+                        CompressedAirSupply = StaticEntities.ShowEntities.CompressedAirSupplies.FirstOrDefault(t => t.Number == request.Number).CompressedAirSupplyDtos,
+                        CoolingFreshWater = StaticEntities.ShowEntities.CoolingFreshWaters.FirstOrDefault(t => t.Number == request.Number).CoolingFreshWaterDtos,
+                        CoolingSeaWater = StaticEntities.ShowEntities.CoolingSeaWaters.FirstOrDefault(t => t.Number == request.Number).CoolingSeaWaterDtos,
+                        CoolingWater = StaticEntities.ShowEntities.CoolingWaters.FirstOrDefault(t => t.Number == request.Number).CoolingWaterDtos,
+                        CylinderLubOil = StaticEntities.ShowEntities.CylinderLubOils.FirstOrDefault(t => t.Number == request.Number).CylinderLubOilDtos,
+                        ExhaustGas = StaticEntities.ShowEntities.ExhaustGases.FirstOrDefault(t => t.Number == request.Number).ExhaustGasDtos,
+                        FO = StaticEntities.ShowEntities.FOs.FirstOrDefault(t => t.Number == request.Number).FODtos,
+                        FOSupplyUnit = StaticEntities.ShowEntities.FOSupplyUnits.FirstOrDefault(t => t.Number == request.Number).FOSupplyUnitDtos,
+                        LubOilPurifying = StaticEntities.ShowEntities.LubOilPurifyings.FirstOrDefault(t => t.Number == request.Number).LubOilPurifyingDtos,
+                        LubOil = StaticEntities.ShowEntities.LubOils.FirstOrDefault(t => t.Number == request.Number).LubOilDtos,
+                        MainGeneratorSet = StaticEntities.ShowEntities.MainGeneratorSets.FirstOrDefault(t => t.Number == request.Number).MainGeneratorSetDtos,
+                        MainSwitchboard = StaticEntities.ShowEntities.MainSwitchboards.FirstOrDefault(t => t.Number == request.Number).MainSwitchboardDtos,
+                        MERemoteControl = StaticEntities.ShowEntities.MERemoteControls.FirstOrDefault(t => t.Number == request.Number).MERemoteControlDtos,
+                        Miscellaneous = StaticEntities.ShowEntities.Miscellaneouses.FirstOrDefault(t => t.Number == request.Number).MiscellaneousDtos,
+                        ScavengeAir = StaticEntities.ShowEntities.ScavengeAirs.FirstOrDefault(t => t.Number == request.Number).ScavengeAirDtos,
+                        ShaftClutch = StaticEntities.ShowEntities.ShaftClutchs.FirstOrDefault(t => t.Number == request.Number).ShaftClutchDtos,
+                        AssistantDecision = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == request.Number).AssistantDecisionDtos,
+                    };
+                    break;
+
+                case "ee":
+                default:
+                    var vesselEntity = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == request.Number);
+                    foreach (var prop in vesselEntity.GetType().GetProperties())
+                    {
+                        if (prop.PropertyType == typeof(double) ||
+                            prop.PropertyType == typeof(float) ||
+                            prop.PropertyType == typeof(decimal) ||
+                            prop.PropertyType == typeof(double?) ||
+                            prop.PropertyType == typeof(float?) ||
+                            prop.PropertyType == typeof(decimal?))
+                            prop.SetValue(vesselEntity, Math.Round(Convert.ToDouble(prop.GetValue(vesselEntity)), 4));
+                    }
+                    result = vesselEntity;
+                    var tempResult = result.ToJson().ToJObject();
+                    var fsDtos = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == request.Number).FlowmeterDtos;
+                    var fsDtosClear = new List<FlowmeterDto> {
                             new FlowmeterDto { DeviceNo = "mefuel1", ConsAcc=0, ConsAct=0 },
                             new FlowmeterDto { DeviceNo = "mefuel2", ConsAcc=0, ConsAct=0 },
                             new FlowmeterDto { DeviceNo = "memethanol", ConsAcc=0, ConsAct=0 }
                         };
 
-                        /*国能长江01
-                        foreach (var dto in fsDtos)
+                    /*国能长江01
+                    foreach (var dto in fsDtos)
+                    {
+                        if (!dto.DeviceNo.Contains("in") && !dto.DeviceNo.Contains("out"))
                         {
-                            if (!dto.DeviceNo.Contains("in") && !dto.DeviceNo.Contains("out"))
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("_", "")))].ConsAct = dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("_", "")))].ConsAcc = dto.ConsAcc;
-                            }
-                            else if (dto.DeviceNo.Contains("in"))
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("in", "").Replace("_", "")))].ConsAct += dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("in", "").Replace("_", "")))].ConsAcc += dto.ConsAcc;
-                            }
-                            else if (dto.DeviceNo.Contains("out"))
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("out", "").Replace("_", "")))].ConsAct -= dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("out", "").Replace("_", "")))].ConsAcc -= dto.ConsAcc;
-                            }
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("_", "")))].ConsAct = dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("_", "")))].ConsAcc = dto.ConsAcc;
+                        }
+                        else if (dto.DeviceNo.Contains("in"))
+                        {
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("in", "").Replace("_", "")))].ConsAct += dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("in", "").Replace("_", "")))].ConsAcc += dto.ConsAcc;
+                        }
+                        else if (dto.DeviceNo.Contains("out"))
+                        {
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("out", "").Replace("_", "")))].ConsAct -= dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("out", "").Replace("_", "")))].ConsAcc -= dto.ConsAcc;
+                        }
+                    }*/
+
+                    //me_fuel_in_1 主机 me_fuel_out_1 锅炉1 me_fuel_in_2 辅机进 me_fuel_in_2 辅机出 me_methanol 锅炉2
+                    foreach (var dto in fsDtos)
+                    {
+                        /* dubai glamour
+                         * if (dto.DeviceNo == "me_fuel_out_1" || dto.DeviceNo == "me_methanol")
+                        {
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAct += dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAcc += dto.ConsAcc;
+                        }
+                        else if (dto.DeviceNo == "me_fuel_in_2")
+                        {
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct += dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc += dto.ConsAcc;
+                        }
+                        else if (dto.DeviceNo == "me_fuel_out_2")
+                        {
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct -= dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc -= dto.ConsAcc;
+                        }
+                        else if (dto.DeviceNo == "me_fuel_in_1")
+                        {
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAct = dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAcc = dto.ConsAcc;
                         }*/
-
-                        //me_fuel_in_1 主机 me_fuel_out_1 锅炉1 me_fuel_in_2 辅机进 me_fuel_in_2 辅机出 me_methanol 锅炉2
-                        foreach (var dto in fsDtos)
+                        if (dto.DeviceNo == "blr_fuel")
                         {
-                            /* dubai glamour
-                             * if (dto.DeviceNo == "me_fuel_out_1" || dto.DeviceNo == "me_methanol")
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAct += dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAcc += dto.ConsAcc;
-                            }
-                            else if (dto.DeviceNo == "me_fuel_in_2")
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct += dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc += dto.ConsAcc;
-                            }
-                            else if (dto.DeviceNo == "me_fuel_out_2")
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct -= dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc -= dto.ConsAcc;
-                            }
-                            else if (dto.DeviceNo == "me_fuel_in_1")
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAct = dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAcc = dto.ConsAcc;
-                            }*/
-                            if (dto.DeviceNo == "blr_fuel")
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAct = dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAcc = dto.ConsAcc;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].FuelType = dto.FuelType;
-                            }
-                            else if (dto.DeviceNo == "ae_fuel")
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct = dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc = dto.ConsAcc;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].FuelType = dto.FuelType;
-                            }
-                            else if (dto.DeviceNo == "me_fuel")
-                            {
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAct = dto.ConsAct;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAcc = dto.ConsAcc;
-                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].FuelType = dto.FuelType;
-                            }
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAct = dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAcc = dto.ConsAcc;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].FuelType = dto.FuelType;
                         }
-
-                        foreach (var dto in fsDtosClear)
+                        else if (dto.DeviceNo == "ae_fuel")
                         {
-                            foreach (var prop in dto.GetType().GetProperties())
-                            {
-                                if (prop.PropertyType == typeof(double) ||
-                                    prop.PropertyType == typeof(float) ||
-                                    prop.PropertyType == typeof(decimal) ||
-                                    prop.PropertyType == typeof(double?) ||
-                                    prop.PropertyType == typeof(float?) ||
-                                    prop.PropertyType == typeof(decimal?))
-                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
-                            }
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct = dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc = dto.ConsAcc;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].FuelType = dto.FuelType;
                         }
-                        var fs = new JProperty("Flowmeters", JArray.FromObject(fsDtosClear));
-                        tempResult.Add(fs);
-                        var ssDtos = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == request.Number).ShaftDtos;
-                        var ssDtosClear = new List<ShaftDto> {
+                        else if (dto.DeviceNo == "me_fuel")
+                        {
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAct = dto.ConsAct;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAcc = dto.ConsAcc;
+                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].FuelType = dto.FuelType;
+                        }
+                    }
+
+                    foreach (var dto in fsDtosClear)
+                    {
+                        foreach (var prop in dto.GetType().GetProperties())
+                        {
+                            if (prop.PropertyType == typeof(double) ||
+                                prop.PropertyType == typeof(float) ||
+                                prop.PropertyType == typeof(decimal) ||
+                                prop.PropertyType == typeof(double?) ||
+                                prop.PropertyType == typeof(float?) ||
+                                prop.PropertyType == typeof(decimal?))
+                                prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                        }
+                    }
+                    var fs = new JProperty("Flowmeters", JArray.FromObject(fsDtosClear));
+                    tempResult.Add(fs);
+                    var ssDtos = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == request.Number).ShaftDtos;
+                    var ssDtosClear = new List<ShaftDto> {
                             new ShaftDto { DeviceNo = "shaft_1", Power=0, RPM=0, Torque=0, Thrust=0 },
                             new ShaftDto { DeviceNo = "shaft_2", Power=0, RPM=0, Torque=0, Thrust=0 }
                         };
 
-                        foreach (var dto in ssDtos)
-                        {
-                            /* dubai glamour
-                             * ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Power = dto.Power;
-                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].RPM = dto.RPM;
-                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Torque = dto.Torque;
-                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Thrust = dto.Thrust;*/
-                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Power = dto.Power;
-                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].RPM = dto.RPM;
-                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Torque = dto.Torque;
-                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Thrust = dto.Thrust;
-                        }
+                    foreach (var dto in ssDtos)
+                    {
+                        /* dubai glamour
+                         * ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Power = dto.Power;
+                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].RPM = dto.RPM;
+                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Torque = dto.Torque;
+                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Thrust = dto.Thrust;*/
+                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Power = dto.Power;
+                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].RPM = dto.RPM;
+                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Torque = dto.Torque;
+                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Thrust = dto.Thrust;
+                    }
 
-                        foreach (var dto in ssDtosClear)
+                    foreach (var dto in ssDtosClear)
+                    {
+                        foreach (var prop in dto.GetType().GetProperties())
                         {
-                            foreach (var prop in dto.GetType().GetProperties())
+                            try
                             {
-                                try
-                                {
-                                    if ((prop.PropertyType == typeof(double) ||
-                                                                prop.PropertyType == typeof(float) ||
-                                                                prop.PropertyType == typeof(decimal) ||
-                                                                prop.PropertyType == typeof(double?) ||
-                                                                prop.PropertyType == typeof(float?) ||
-                                                                prop.PropertyType == typeof(decimal?)) && prop.GetValue(dto) != null)
-                                        prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine("转换值错误：" + prop.GetValue(dto));
-                                    Debug.WriteLine("转换值错误：" + prop.GetValue(dto));
-                                    _logger.LogError("转换值错误：" + prop.GetValue(dto), ex);
-                                    throw;
-                                }
+                                if ((prop.PropertyType == typeof(double) ||
+                                                            prop.PropertyType == typeof(float) ||
+                                                            prop.PropertyType == typeof(decimal) ||
+                                                            prop.PropertyType == typeof(double?) ||
+                                                            prop.PropertyType == typeof(float?) ||
+                                                            prop.PropertyType == typeof(decimal?)) && prop.GetValue(dto) != null)
+                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
                             }
-                        }
-                        var ss = new JProperty("Shafts", JArray.FromObject(ssDtosClear));
-                        tempResult.Add(ss);
-
-                        var ECStatus = "";
-                        var EEStatus = "";
-                        var criteriaDto = new CriteriaDto();
-                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaHFO"))
-                        {
-                            criteriaDto.HFO = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaHFO").HighLimit;
-                        }
-                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaMethanol"))
-                        {
-                            criteriaDto.Methanol = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaMethanol").HighLimit;
-                        }
-                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower"))
-                        {
-                            criteriaDto.Power = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower").HighLimit;
-                        }
-                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed"))
-                        {
-                            criteriaDto.Speed = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed").HighLimit;
-                        }
-                        if (Convert.ToDouble(vesselEntity.SFOC) * Convert.ToDouble(vesselEntity.FCPerNm) != 0)
-                        {
-                            var ecValue = (vesselEntity.SFOC / (criteriaDto.HFO / criteriaDto.Power) + vesselEntity.FCPerNm / (criteriaDto.HFO / criteriaDto.Speed)) / 2;
-                            if (ecValue > 0.99 && ecValue <= 1.09)
-                                ECStatus = request.Language == "en_US" ? "Normal" : "正常";
-                            else if (ecValue > 0.94 && ecValue <= 0.99)
-                                ECStatus = (request.Language == "en_US" ? "Good,Fuel saving:" : "良好，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
-                            else if (ecValue <= 0.94)
-                                ECStatus = (request.Language == "en_US" ? "Excellent,Fuel saving:" : "极佳，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
-                            else
-                                ECStatus = request.Language == "en_US" ? "Bad" : "差";
-                        }
-                        if (Convert.ToDouble(vesselEntity.RtCII) != 0)
-                        {
-                            var eeValue = vesselEntity.RtCII / ((criteriaDto.HFO * 3.114d + criteriaDto.Methanol * 1.375d) * 1000d / (10000d * 18d));
-                            if (eeValue > 0.95 && eeValue <= 1.05)
-                                EEStatus = request.Language == "en_US" ? "Normal" : "正常";
-                            else if (eeValue <= 0.95)
-                                EEStatus = request.Language == "en_US" ? "Good" : "良好";
-                            else
-                                EEStatus = request.Language == "en_US" ? "Bad" : "差";
-                        }
-
-                        var HFOC = 0m;
-                        var HFOCPre = 0m;
-
-                        var dHFOAcc = 0d;
-                        var dMethanolAcc = 0d;
-
-                        var dMEHFOAcc = 0d;
-                        var dAEHFOAcc = 0d;
-                        var dBLRHFOAcc = 0d;
-                        var dMEDGOAcc = 0d;
-                        var dAEDGOAcc = 0d;
-                        var dBLRDGOAcc = 0d;
-
-                        try
-                        {
-                            var totalIndicator = StaticEntities.ShowEntities.TotalIndicators.FirstOrDefault(t => t.Number == request.Number);
-                            var powerUnits = StaticEntities.ShowEntities.PowerUnits.FirstOrDefault(t => t.Number == request.Number).PowerUnitDtos;
-                            var meFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "me", new());
-                            var aeFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "ae", new());
-                            var blrFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "blr", new());
-                            var prediction = StaticEntities.ShowEntities.Predictions.FirstOrDefault(t => t.Number == request.Number);
-                            var shipinfo = new BaseShipInfo();
-                            var cargoWeight = 0d;
-
-                            var CEmission = Math.Round((totalIndicator.HFO ?? 0) * 3.114m + (totalIndicator.Methanol ?? 0) * 1.375m + (totalIndicator.DGO ?? 0) * 3.206m, 2);
-                            tempResult.Add(new JProperty("CEmission", CEmission.ToString()));
-
-                            using (var _channel = await _consulService.GetGrpcChannelAsync("base-srv"))
+                            catch (Exception ex)
                             {
-                                var client = new Base.BaseClient(_channel);
-                                var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = request.Number });
-                                var shipResponse = await client.GetShipByIdAsync(new IdRequest { Id = deviceResponse.DeviceInfo.ShipId });
-                                var voyageResponse = await client.GetLatestVoyageInfoByDeviceNumberAsync(new DeviceRequest { Number = request.Number });
-                                shipinfo.ShipType = shipResponse.ShipInfo.TypeName;
-                                shipinfo.DWT = shipResponse.ShipInfo.Dwt;
-                                shipinfo.GT = shipResponse.ShipInfo.Gt;
-                                cargoWeight = voyageResponse.Boatload;
+                                Console.WriteLine("转换值错误：" + prop.GetValue(dto));
+                                Debug.WriteLine("转换值错误：" + prop.GetValue(dto));
+                                _logger.LogError("转换值错误：" + prop.GetValue(dto), ex);
+                                throw;
                             }
-                            var tonnage = 0f;
-                            if (shipinfo.ShipType.Contains("LNG carrier") ||
-                                shipinfo.ShipType.Contains("bulk carrier") ||
-                                shipinfo.ShipType.Contains("combination carrier") ||
-                                shipinfo.ShipType.Contains("container ship") ||
-                                shipinfo.ShipType.Contains("gas carrier") ||
-                                shipinfo.ShipType.Contains("general cargo ship") ||
-                                shipinfo.ShipType.Contains("refrigerated cargo carrier") ||
-                                shipinfo.ShipType.Contains("tanker"))
-                                tonnage = shipinfo.DWT ?? 0;
-                            else
-                                tonnage = shipinfo.GT ?? 0;
-                            var PreRtCII = Math.Round(Convert.ToDouble((prediction.HFO ?? 0) * 3.114m + (prediction.DGO ?? 0) * 3.206m) * 1000 / Convert.ToDouble(tonnage * vesselEntity.GroundSpeed), 2);
-                            var PreHFO = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
-                            var PreTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
-                            var PreCO2 = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 3.114 / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
-                            var PreCEmission = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 3.114, 2);
-                            var HFOTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
-                            var CO2TW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO * 3.114m + totalIndicator.Methanol * 1.375m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
-                            var EEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO * 3.114m + totalIndicator.Methanol * 1.375m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
-                            var PreEEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO * 3.114m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
-                            var CO2PerNm = Math.Round((totalIndicator.HFO ?? 0) * 3.114m + (totalIndicator.Methanol ?? 0) * 1.375m, 2);
-                            tempResult.Add(new JProperty("PreRtCII", PreRtCII));
-                            tempResult.Add(new JProperty("PreHFO", PreHFO));
-                            tempResult.Add(new JProperty("PreTW", PreTW));
-                            tempResult.Add(new JProperty("PreCO2", PreCO2));
-                            tempResult.Add(new JProperty("PreCEmission", PreCEmission));
-
-                            tempResult.Add(new JProperty("HFOTW", HFOTW));
-                            tempResult.Add(new JProperty("CO2TW", CO2TW));
-                            tempResult.Add(new JProperty("EEOI", EEOI));
-                            tempResult.Add(new JProperty("PreEEOI", PreEEOI));
-                            tempResult.Add(new JProperty("CO2PerNm", CO2PerNm));
-
-                            var eeRating = prediction.HFO / totalIndicator.HFO;
-                            if (eeRating > 0.95m && eeRating <= 1.05m)
-                                EEStatus = request.Language == "en_US" ? "Normal" : "正常";
-                            else if (eeRating <= 0.99m)
-                                EEStatus = request.Language == "en_US" ? "Good" : "良好";
-                            else
-                                EEStatus = request.Language == "en_US" ? "Bad" : "差";
-
-                            HFOC = Math.Round(totalIndicator.HFO ?? 0, 2);
-                            HFOCPre = Math.Round(prediction.HFO ?? 0, 2);
-
-                            var dailyConsumptionIndex = StaticEntities.StaticEntities.DailyConsumptions.IndexOf(StaticEntities.StaticEntities.DailyConsumptions.FirstOrDefault(t => t.Number == request.Number));
-                            dHFOAcc = Convert.ToDouble(totalIndicator.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].HFOAcc;
-                            dMethanolAcc = Convert.ToDouble(totalIndicator.MethanolAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MethanolAcc;
-
-                            dMEHFOAcc = Convert.ToDouble(meFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MEHFOAcc;
-                            dAEHFOAcc = Convert.ToDouble(aeFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AEHFOAcc;
-                            dBLRHFOAcc = Convert.ToDouble(blrFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].BLRHFOAcc;
-                            dMEDGOAcc = Convert.ToDouble(meFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MEDGOAcc;
-                            dAEDGOAcc = Convert.ToDouble(aeFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AEDGOAcc;
-                            dBLRDGOAcc = Convert.ToDouble(blrFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].BLRDGOAcc;
                         }
-                        catch (Exception) { }
-                        tempResult.Add(new JProperty("ECStatus", ECStatus));
-                        tempResult.Add(new JProperty("EEStatus", EEStatus));
+                    }
+                    var ss = new JProperty("Shafts", JArray.FromObject(ssDtosClear));
+                    tempResult.Add(ss);
 
-                        tempResult.Add(new JProperty("HFOC", HFOC));
-                        tempResult.Add(new JProperty("HFOCPre", HFOCPre));
+                    var ECStatus = "";
+                    var EEStatus = "";
+                    var criteriaDto = new CriteriaDto();
+                    if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaHFO"))
+                    {
+                        criteriaDto.HFO = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaHFO").HighLimit;
+                    }
+                    if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaMethanol"))
+                    {
+                        criteriaDto.Methanol = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaMethanol").HighLimit;
+                    }
+                    if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower"))
+                    {
+                        criteriaDto.Power = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower").HighLimit;
+                    }
+                    if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed"))
+                    {
+                        criteriaDto.Speed = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed").HighLimit;
+                    }
+                    if (Convert.ToDouble(vesselEntity.SFOC) * Convert.ToDouble(vesselEntity.FCPerNm) != 0)
+                    {
+                        var ecValue = (vesselEntity.SFOC / (criteriaDto.HFO / criteriaDto.Power) + vesselEntity.FCPerNm / (criteriaDto.HFO / criteriaDto.Speed)) / 2;
+                        if (ecValue > 0.99 && ecValue <= 1.09)
+                            ECStatus = request.Language == "en_US" ? "Normal" : "正常";
+                        else if (ecValue > 0.94 && ecValue <= 0.99)
+                            ECStatus = (request.Language == "en_US" ? "Good,Fuel saving:" : "良好，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
+                        else if (ecValue <= 0.94)
+                            ECStatus = (request.Language == "en_US" ? "Excellent,Fuel saving:" : "极佳，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
+                        else
+                            ECStatus = request.Language == "en_US" ? "Bad" : "差";
+                    }
+                    if (Convert.ToDouble(vesselEntity.RtCII) != 0)
+                    {
+                        var eeValue = vesselEntity.RtCII / ((criteriaDto.HFO * 3.114d + criteriaDto.Methanol * 1.375d) * 1000d / (10000d * 18d));
+                        if (eeValue > 0.95 && eeValue <= 1.05)
+                            EEStatus = request.Language == "en_US" ? "Normal" : "正常";
+                        else if (eeValue <= 0.95)
+                            EEStatus = request.Language == "en_US" ? "Good" : "良好";
+                        else
+                            EEStatus = request.Language == "en_US" ? "Bad" : "差";
+                    }
 
-                        tempResult.Add(new JProperty("dHFOAcc", dHFOAcc));
-                        tempResult.Add(new JProperty("dMethanolAcc", dMethanolAcc));
+                    var HFOC = 0m;
+                    var HFOCPre = 0m;
 
-                        tempResult.Add(new JProperty("dMEHFOAcc", dMEHFOAcc));
-                        tempResult.Add(new JProperty("dAEHFOAcc", dAEHFOAcc));
-                        tempResult.Add(new JProperty("dBLRHFOAcc", dBLRHFOAcc));
-                        tempResult.Add(new JProperty("dMEDGOAcc", dMEDGOAcc));
-                        tempResult.Add(new JProperty("dAEDGOAcc", dAEDGOAcc));
-                        tempResult.Add(new JProperty("dBLRDGOAcc", dBLRDGOAcc));
+                    var dHFOAcc = 0d;
+                    var dMethanolAcc = 0d;
 
-                        result = tempResult;
-                        break;
-                }
-            }
-            else
-            {
-                switch (request.Type)
-                {
-                    case "generator":
-                        result = new List<Generator> {
-                                new Generator{
-                                    Number=request.Number,
-                                    ReceiveDatetime=DateTime.UtcNow,
-                                    DeviceNo="G1",
-                                    IsRuning=1,
-                                    RPM=0,
-                                    StartPressure=0,
-                                    ControlPressure=0,
-                                    ScavengingPressure=0,
-                                    LubePressure=0,
-                                    LubeTEMP=0,
-                                    FuelPressure=0,
-                                    FuelTEMP=0,
-                                    FreshWaterPressure=0,
-                                    FreshWaterTEMPIn=0,
-                                    FreshWaterTEMPOut=0,
-                                    CoolingWaterPressure=0,
-                                    CoolingWaterTEMPIn=0,
-                                    CoolingWaterTEMPOut=0,
-                                    CylinderTEMP1=0,
-                                    CylinderTEMP2=0,
-                                    CylinderTEMP3=0,
-                                    CylinderTEMP4=0,
-                                    CylinderTEMP5=0,
-                                    CylinderTEMP6=0,
-                                    SuperchargerTEMPIn=0,
-                                    SuperchargerTEMPOut=0,
-                                    ScavengingTEMP=0,
-                                    BearingTEMP=0,
-                                    BearingTEMPFront=0,
-                                    BearingTEMPBack=0,
-                                    Power=400,
-                                    WindingTEMPL1=0,
-                                    WindingTEMPL2=0,
-                                    WindingTEMPL3=0,
-                                    VoltageL1L2=0,
-                                    VoltageL2L3=0,
-                                    VoltageL1L3=0,
-                                    FrequencyL1=0,
-                                    FrequencyL2=0,
-                                    FrequencyL3=0,
-                                    CurrentL1=0,
-                                    CurrentL2=0,
-                                    CurrentL3=0,
-                                    ReactivePower=0,
-                                    PowerFactor=0,
-                                    LoadRatio=0
-                                },
-                                new Generator{
-                                    Number=request.Number,
-                                    ReceiveDatetime=DateTime.UtcNow,
-                                    DeviceNo="G2",
-                                    IsRuning=1,
-                                    RPM=0,
-                                    StartPressure=0,
-                                    ControlPressure=0,
-                                    ScavengingPressure=0,
-                                    LubePressure=0,
-                                    LubeTEMP=0,
-                                    FuelPressure=0,
-                                    FuelTEMP=0,
-                                    FreshWaterPressure=0,
-                                    FreshWaterTEMPIn=0,
-                                    FreshWaterTEMPOut=0,
-                                    CoolingWaterPressure=0,
-                                    CoolingWaterTEMPIn=0,
-                                    CoolingWaterTEMPOut=0,
-                                    CylinderTEMP1=0,
-                                    CylinderTEMP2=0,
-                                    CylinderTEMP3=0,
-                                    CylinderTEMP4=0,
-                                    CylinderTEMP5=0,
-                                    CylinderTEMP6=0,
-                                    SuperchargerTEMPIn=0,
-                                    SuperchargerTEMPOut=0,
-                                    ScavengingTEMP=0,
-                                    BearingTEMP=0,
-                                    BearingTEMPFront=0,
-                                    BearingTEMPBack=0,
-                                    Power=350,
-                                    WindingTEMPL1=0,
-                                    WindingTEMPL2=0,
-                                    WindingTEMPL3=0,
-                                    VoltageL1L2=0,
-                                    VoltageL2L3=0,
-                                    VoltageL1L3=0,
-                                    FrequencyL1=0,
-                                    FrequencyL2=0,
-                                    FrequencyL3=0,
-                                    CurrentL1=0,
-                                    CurrentL2=0,
-                                    CurrentL3=0,
-                                    ReactivePower=0,
-                                    PowerFactor=0,
-                                    LoadRatio=0
-                                },
-                                new Generator{
-                                    Number=request.Number,
-                                    ReceiveDatetime=DateTime.UtcNow,
-                                    DeviceNo="G3",
-                                    IsRuning=0,
-                                    RPM=0,
-                                    StartPressure=0,
-                                    ControlPressure=0,
-                                    ScavengingPressure=0,
-                                    LubePressure=0,
-                                    LubeTEMP=0,
-                                    FuelPressure=0,
-                                    FuelTEMP=0,
-                                    FreshWaterPressure=0,
-                                    FreshWaterTEMPIn=0,
-                                    FreshWaterTEMPOut=0,
-                                    CoolingWaterPressure=0,
-                                    CoolingWaterTEMPIn=0,
-                                    CoolingWaterTEMPOut=0,
-                                    CylinderTEMP1=0,
-                                    CylinderTEMP2=0,
-                                    CylinderTEMP3=0,
-                                    CylinderTEMP4=0,
-                                    CylinderTEMP5=0,
-                                    CylinderTEMP6=0,
-                                    SuperchargerTEMPIn=0,
-                                    SuperchargerTEMPOut=0,
-                                    ScavengingTEMP=0,
-                                    BearingTEMP=0,
-                                    BearingTEMPFront=0,
-                                    BearingTEMPBack=0,
-                                    Power=0,
-                                    WindingTEMPL1=0,
-                                    WindingTEMPL2=0,
-                                    WindingTEMPL3=0,
-                                    VoltageL1L2=0,
-                                    VoltageL2L3=0,
-                                    VoltageL1L3=0,
-                                    FrequencyL1=0,
-                                    FrequencyL2=0,
-                                    FrequencyL3=0,
-                                    CurrentL1=0,
-                                    CurrentL2=0,
-                                    CurrentL3=0,
-                                    ReactivePower=0,
-                                    PowerFactor=0,
-                                    LoadRatio=0
-                                },
-                                new Generator{
-                                    Number=request.Number,
-                                    ReceiveDatetime=DateTime.UtcNow,
-                                    DeviceNo="G4",
-                                    IsRuning=1,
-                                    RPM=0,
-                                    StartPressure=0,
-                                    ControlPressure=0,
-                                    ScavengingPressure=0,
-                                    LubePressure=0,
-                                    LubeTEMP=0,
-                                    FuelPressure=0,
-                                    FuelTEMP=0,
-                                    FreshWaterPressure=0,
-                                    FreshWaterTEMPIn=0,
-                                    FreshWaterTEMPOut=0,
-                                    CoolingWaterPressure=0,
-                                    CoolingWaterTEMPIn=0,
-                                    CoolingWaterTEMPOut=0,
-                                    CylinderTEMP1=0,
-                                    CylinderTEMP2=0,
-                                    CylinderTEMP3=0,
-                                    CylinderTEMP4=0,
-                                    CylinderTEMP5=0,
-                                    CylinderTEMP6=0,
-                                    SuperchargerTEMPIn=0,
-                                    SuperchargerTEMPOut=0,
-                                    ScavengingTEMP=0,
-                                    BearingTEMP=0,
-                                    BearingTEMPFront=0,
-                                    BearingTEMPBack=0,
-                                    Power=370,
-                                    WindingTEMPL1=0,
-                                    WindingTEMPL2=0,
-                                    WindingTEMPL3=0,
-                                    VoltageL1L2=0,
-                                    VoltageL2L3=0,
-                                    VoltageL1L3=0,
-                                    FrequencyL1=0,
-                                    FrequencyL2=0,
-                                    FrequencyL3=0,
-                                    CurrentL1=0,
-                                    CurrentL2=0,
-                                    CurrentL3=0,
-                                    ReactivePower=0,
-                                    PowerFactor=0,
-                                    LoadRatio=0
-                                }
-                            };
-                        break;
+                    var dMEHFOAcc = 0d;
+                    var dAEHFOAcc = 0d;
+                    var dBLRHFOAcc = 0d;
+                    var dMEDGOAcc = 0d;
+                    var dAEDGOAcc = 0d;
+                    var dBLRDGOAcc = 0d;
 
-                    case "shaft":
-                        result = new
+                    try
+                    {
+                        var totalIndicator = StaticEntities.ShowEntities.TotalIndicators.FirstOrDefault(t => t.Number == request.Number);
+                        var powerUnits = StaticEntities.ShowEntities.PowerUnits.FirstOrDefault(t => t.Number == request.Number).PowerUnitDtos;
+                        var meFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "me", new());
+                        var aeFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "ae", new());
+                        var blrFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "blr", new());
+                        var prediction = StaticEntities.ShowEntities.Predictions.FirstOrDefault(t => t.Number == request.Number);
+                        var shipinfo = new BaseShipInfo();
+                        var cargoWeight = 0d;
+
+                        var CEmission = Math.Round((totalIndicator.HFO ?? 0) * 3.114m + (totalIndicator.Methanol ?? 0) * 1.375m + (totalIndicator.DGO ?? 0) * 3.206m, 2);
+                        tempResult.Add(new JProperty("CEmission", CEmission.ToString()));
+
+                        using (var _channel = await _consulService.GetGrpcChannelAsync("base-srv"))
                         {
-                            sternSealings = new List<SternSealing> {
-                                new SternSealing
-                                {
-                                    Number = request.Number,
-                                    ReceiveDatetime = DateTime.UtcNow,
-                                    DeviceNo = "SternSealing1",
-                                    FrontTEMP = 0,
-                                    BackTEMP = 0,
-                                    BackLeftTEMP = 0,
-                                    BackRightTEMP = 0
-                                }
-                            },
-                            shafts = new List<Shaft> {
-                                new Shaft{
-                                    Number=request.Number,
-                                    ReceiveDatetime=DateTime.UtcNow,
-                                    DeviceNo="Shaft1",
-                                    Power=0,
-                                    RPM=0,
-                                    Torque=0,
-                                    Thrust=0
-                                }
-                            }
-                        };
-                        break;
+                            var client = new Base.BaseClient(_channel);
+                            var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = request.Number });
+                            var shipResponse = await client.GetShipByIdAsync(new IdRequest { Id = deviceResponse.DeviceInfo.ShipId });
+                            var voyageResponse = await client.GetLatestVoyageInfoByDeviceNumberAsync(new DeviceRequest { Number = request.Number });
+                            shipinfo.ShipType = shipResponse.ShipInfo.TypeName;
+                            shipinfo.DWT = shipResponse.ShipInfo.Dwt;
+                            shipinfo.GT = shipResponse.ShipInfo.Gt;
+                            cargoWeight = voyageResponse.Boatload;
+                        }
+                        var tonnage = 0f;
+                        if (shipinfo.ShipType.Contains("LNG carrier") ||
+                            shipinfo.ShipType.Contains("bulk carrier") ||
+                            shipinfo.ShipType.Contains("combination carrier") ||
+                            shipinfo.ShipType.Contains("container ship") ||
+                            shipinfo.ShipType.Contains("gas carrier") ||
+                            shipinfo.ShipType.Contains("general cargo ship") ||
+                            shipinfo.ShipType.Contains("refrigerated cargo carrier") ||
+                            shipinfo.ShipType.Contains("tanker"))
+                            tonnage = shipinfo.DWT ?? 0;
+                        else
+                            tonnage = shipinfo.GT ?? 0;
+                        var PreRtCII = Math.Round(Convert.ToDouble((prediction.HFO ?? 0) * 3.114m + (prediction.DGO ?? 0) * 3.206m) * 1000 / Convert.ToDouble(tonnage * vesselEntity.GroundSpeed), 2);
+                        var PreHFO = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
+                        var PreTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
+                        var PreCO2 = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 3.114 / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
+                        var PreCEmission = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 3.114, 2);
+                        var HFOTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
+                        var CO2TW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO * 3.114m + totalIndicator.Methanol * 1.375m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
+                        var EEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO * 3.114m + totalIndicator.Methanol * 1.375m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
+                        var PreEEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO * 3.114m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
+                        var CO2PerNm = Math.Round((totalIndicator.HFO ?? 0) * 3.114m + (totalIndicator.Methanol ?? 0) * 1.375m, 2);
+                        tempResult.Add(new JProperty("PreRtCII", PreRtCII));
+                        tempResult.Add(new JProperty("PreHFO", PreHFO));
+                        tempResult.Add(new JProperty("PreTW", PreTW));
+                        tempResult.Add(new JProperty("PreCO2", PreCO2));
+                        tempResult.Add(new JProperty("PreCEmission", PreCEmission));
 
-                    case "liquid":
-                        result = new List<LiquidLevel> {
-                                new LiquidLevel{
-                                    Number=request.Number,
-                                    ReceiveDatetime=DateTime.UtcNow,
-                                    DeviceNo="l1",
-                                    Level=0,
-                                    Temperature=0
-                                }
-                            };
-                        break;
+                        tempResult.Add(new JProperty("HFOTW", HFOTW));
+                        tempResult.Add(new JProperty("CO2TW", CO2TW));
+                        tempResult.Add(new JProperty("EEOI", EEOI));
+                        tempResult.Add(new JProperty("PreEEOI", PreEEOI));
+                        tempResult.Add(new JProperty("CO2PerNm", CO2PerNm));
 
-                    case "supply":
-                        result = new List<SupplyUnit> {
-                                new SupplyUnit{
-                                    Number=request.Number,
-                                    ReceiveDatetime=DateTime.UtcNow,
-                                    DeviceNo="s1",
-                                    IsRuning=1,
-                                    Temperature=0,
-                                    Pressure=0
-                                }
-                            };
-                        break;
+                        var eeRating = prediction.HFO / totalIndicator.HFO;
+                        if (eeRating > 0.95m && eeRating <= 1.05m)
+                            EEStatus = request.Language == "en_US" ? "Normal" : "正常";
+                        else if (eeRating <= 0.99m)
+                            EEStatus = request.Language == "en_US" ? "Good" : "良好";
+                        else
+                            EEStatus = request.Language == "en_US" ? "Bad" : "差";
 
-                    case "battery":
-                        result = new List<Battery> {
-                                new Battery{
-                                    Number=request.Number,
-                                    ReceiveDatetime=DateTime.UtcNow,
-                                    DeviceNo="b1",
-                                    SOC=100,
-                                    SOH=100,
-                                    MaxTEMP=0,
-                                    MaxTEMPBox="0",
-                                    MaxTEMPNo="0",
-                                    MinTEMP=0,
-                                    MinTEMPBox="0",
-                                    MinTEMPNo="0",
-                                    MaxVoltage=0,
-                                    MaxVoltageBox="0",
-                                    MaxVoltageNo="0",
-                                    MinVoltage=0,
-                                    MinVoltageBox="0",
-                                    MinVoltageNo="0"
-                                },
-                                new Battery{
-                                    Number=request.Number,
-                                    ReceiveDatetime=DateTime.UtcNow,
-                                    DeviceNo="b2",
-                                    SOC=120,
-                                    SOH=120,
-                                    MaxTEMP=0,
-                                    MaxTEMPBox="0",
-                                    MaxTEMPNo="0",
-                                    MinTEMP=0,
-                                    MinTEMPBox="0",
-                                    MinTEMPNo="0",
-                                    MaxVoltage=0,
-                                    MaxVoltageBox="0",
-                                    MaxVoltageNo="0",
-                                    MinVoltage=0,
-                                    MinVoltageBox="0",
-                                    MinVoltageNo="0"
-                                },
-                            };
-                        break;
+                        HFOC = Math.Round(totalIndicator.HFO ?? 0, 2);
+                        HFOCPre = Math.Round(prediction.HFO ?? 0, 2);
 
-                    case "er":
-                        result = new
-                        {
-                            CompositeBoiler = new List<CompositeBoilerDto>() { new CompositeBoilerDto { Id = 50950, BLRBurnerRunning = 0, BLRHFOService = 0, BLRDGOService = 1, BLRFOP1On = 0, BLRFOP2On = 0, BLRFOTempLow = 0, BLRFOPressHigh = 0, BLRFOTempHigh = 0, BLRDGOTempHigh = 0, BLRHFOTempHigh = null, BLRGE1EXTempHigh = 0, BLRGE2EXTempHigh = 0, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COMPOSITEBOILER" } },
-                            CompressedAirSupply = new List<CompressedAirSupplyDto>() { new CompressedAirSupplyDto { Id = 48778, MEStartPress = 27.4, MEControlPress = 6.9, ExhaustValuePress = 6.9, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COMPRESSEDAIRSUPPLY" } },
-                            CoolingFreshWater = new List<CoolingFreshWaterDto>() { new CoolingFreshWaterDto { Id = 59244, LTCFWPress = 2.3, CCLTCFWOutTemp = 12.2, LTCFW1Press = null, LTCFW2Press = null, LTCFW3Press = null, MEJWCOutPress = null, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COOLINGFRESHWATER" } },
-                            CoolingSeaWater = new List<CoolingSeaWaterDto>() { new CoolingSeaWaterDto { Id = 47539, CSWOutPress = 2.3, CSWOutTemp = 2.3, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COOLINGSEAWATER" } },
-                            CoolingWater = new List<CoolingWaterDto>() { new CoolingWaterDto { Id = 51635, MEJacketInPress = 4.1, MEPressDrop = 1.8, MEOutPress = 2.5, MEJacketPressDrop = 1.8, MEInTemp = 84, MEJacketCyl1OutTemp = 82, MEJacketCyl2OutTemp = 83, MEJacketCyl3OutTemp = 83, MEJacketCyl4OutTemp = 83, MEJacketCyl5OutTemp = 83, MEJacketCyl6OutTemp = 83, MECCCyl1OutTemp = 84, MECCCyl2OutTemp = 84, MECCCyl3OutTemp = 83, MECCCyl4OutTemp = 84, MECCCyl5OutTemp = 84, MECCCyl6OutTemp = 84, MEACInPress = 2.2, MEACInTemp = 36, MEACOutTemp = 36, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "COOLINGWATER" } },
-                            CylinderLubOil = new List<CylinderLubOilDto>() { new CylinderLubOilDto { Id = 56253, MEInTemp = 42.7003550613796, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "CYLINDERLUBOIL" } },
-                            ExhaustGas = new List<ExhaustGasDto>() { new ExhaustGasDto { Id = 51016, METCInTemp = 139, MECyl1AfterTemp = null, MECyl2AfterTemp = null, MECyl3AfterTemp = null, MECyl4AfterTemp = null, MECyl5AfterTemp = null, MECyl6AfterTemp = null, METCOutTemp = 130, MEReceiverPress = 0.1, METurbBackPress = 0, MEACInTemp = 25, MEACOutTemp = 36, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "EXHAUSTGAS", MECyl1AfterTempDev = -8, MECyl2AfterTempDev = -5, MECyl3AfterTempDev = -5, MECyl4AfterTempDev = 3, MECyl5AfterTempDev = 8, MECyl6AfterTempDev = 6 } },
-                            FO = new List<FODto>() { new FODto { Id = 52551, MEInPressure = 8.1, MEInTemp = 35, MEHPOPLeakage = 0, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "FOS" } },
-                            FOSupplyUnit = new List<FOSupplyUnitDto>() { new FOSupplyUnitDto { Id = 46281, HFOService = 1, DGOService = 1, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "FOSUPPLYUNIT" } },
-                            LubOilPurifying = new List<LubOilPurifyingDto>() { new LubOilPurifyingDto { Id = 45732, MEFilterPressHigh = 0, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "LUBOILPURIFYING" } },
-                            LubOil = new List<LubOilDto>() { new LubOilDto { Id = 49594, METCInPress = 2.1, METBSTemp = 46, MEMBTBInPress = 2.1, MEPistonCOInPress = 2.1, MEInTemp = 46, MECYL1PistonCOOutTemp = 47, MECYL2PistonCOOutTemp = 47, MECYL3PistonCOOutTemp = 47, MECYL4PistonCOOutTemp = 47, MECYL5PistonCOOutTemp = 47, MECYL6PistonCOOutTemp = 47, MECYL1PistonCOOutNoFlow = 0, MECYL2PistonCOOutNoFlow = 0, MECYL3PistonCOOutNoFlow = 0, MECYL4PistonCOOutNoFlow = 0, MECYL5PistonCOOutNoFlow = 0, MECYL6PistonCOOutNoFlow = 0, METCOutTemp = 47, MEWaterHigh = 0, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "LUBOIL" } },
-                            MainGeneratorSet = new List<MainGeneratorSetDto>() { new MainGeneratorSetDto { Id = 160136, DGCFWInPress = 0.2, DGStartAirPress = 2.8, DGLOPress = 0.5, DGLOInTemp = 944.2, DGCFWOutTemp = 78, DGEGTC1To3InTemp = 366, DGEGTC4To6InTemp = 362, DGEngineSpeed = 902, DGEngineLoad = 206, DGEngineRunHour = 110, DGLOInPress = 0, DGLOFilterInPress = 0, DGControlAirPress = 0, DGTCLOPress = 0, DGEngineRunning = 1, DGUTemp = 39.3, DGVTemp = 39.4, DGWTemp = 37.9, DGBTDTemp = 40.1, DGCyl1ExTemp = 276, DGCyl2ExTemp = 284, DGCyl3ExTemp = 272, DGCyl4ExTemp = 284, DGCyl5ExTemp = 277, DGCyl6ExTemp = 268, DGTCEXOutTemp = 296, DGBoostAirPress = 0.1, DGFOInPress = 0.8, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINGENERATORSET1" }, new MainGeneratorSetDto { Id = 160134, DGCFWInPress = 0.1, DGStartAirPress = 2.7, DGLOPress = 0.1, DGLOInTemp = 37, DGCFWOutTemp = 69, DGEGTC1To3InTemp = 20, DGEGTC4To6InTemp = 23, DGEngineSpeed = 0, DGEngineLoad = 0, DGEngineRunHour = 11, DGLOInPress = 0, DGLOFilterInPress = 0, DGControlAirPress = 0, DGTCLOPress = 0, DGEngineRunning = 0, DGUTemp = 17.1, DGVTemp = 17.2, DGWTemp = 17.5, DGBTDTemp = 18.2, DGCyl1ExTemp = 66, DGCyl2ExTemp = 67, DGCyl3ExTemp = 67, DGCyl4ExTemp = 68, DGCyl5ExTemp = 68, DGCyl6ExTemp = 67, DGTCEXOutTemp = 17, DGBoostAirPress = 0, DGFOInPress = 0.7, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINGENERATORSET2" }, new MainGeneratorSetDto { Id = 160135, DGCFWInPress = 0.2, DGStartAirPress = 2.7, DGLOPress = 0.5, DGLOInTemp = 57, DGCFWOutTemp = 78, DGEGTC1To3InTemp = 366, DGEGTC4To6InTemp = 356, DGEngineSpeed = 902, DGEngineLoad = 193, DGEngineRunHour = 17, DGLOInPress = 0, DGLOFilterInPress = 0, DGControlAirPress = 0, DGTCLOPress = 0, DGEngineRunning = 1, DGUTemp = 39.2, DGVTemp = 38.7, DGWTemp = 37.4, DGBTDTemp = 38, DGCyl1ExTemp = 279, DGCyl2ExTemp = 294, DGCyl3ExTemp = 283, DGCyl4ExTemp = 277, DGCyl5ExTemp = 282, DGCyl6ExTemp = 291, DGTCEXOutTemp = 296, DGBoostAirPress = 0.1, DGFOInPress = 0.7, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINGENERATORSET3" } },
-                            MainSwitchboard = new List<MainSwitchboardDto>() { new MainSwitchboardDto { Id = 162352, MBVoltageHigh = 0, MBVoltageLow = 0, MBFrequencyHigh = 0, MBFrequencyLow = 0, DGRunning = 1, DGPower = 208, DGVoltageL1L2 = 449.6, DGVoltageL2L3 = 449.7, DGVoltageL3L1 = 449.7, DGCurrentL1 = 326.3, DGCurrentL2 = 328.8, DGCurrentL3 = 328.5, DGFrequency = 60.1, DGPowerFactor = 0.8, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINSWITCHBOARD1" }, new MainSwitchboardDto { Id = 162353, MBVoltageHigh = 0, MBVoltageLow = 0, MBFrequencyHigh = 0, MBFrequencyLow = 0, DGRunning = 0, DGPower = 0, DGVoltageL1L2 = 0, DGVoltageL2L3 = 0, DGVoltageL3L1 = 0, DGCurrentL1 = 0, DGCurrentL2 = 0, DGCurrentL3 = 0, DGFrequency = 0, DGPowerFactor = 1, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINSWITCHBOARD2" }, new MainSwitchboardDto { Id = 162354, MBVoltageHigh = 0, MBVoltageLow = 0, MBFrequencyHigh = 0, MBFrequencyLow = 0, DGRunning = 1, DGPower = 190.1, DGVoltageL1L2 = 449.9, DGVoltageL2L3 = 450.1, DGVoltageL3L1 = 449.8, DGCurrentL1 = 310.8, DGCurrentL2 = 313.3, DGCurrentL3 = 313.3, DGFrequency = 60.1, DGPowerFactor = 0.7, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MAINSWITCHBOARD3" } },
-                            MERemoteControl = new List<MERemoteControlDto>() { new MERemoteControlDto { Id = 53212, MERpm = -0.5, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MEREMOTECONTROL" } },
-                            Miscellaneous = new List<MiscellaneousDto>() { new MiscellaneousDto { Id = 53398, MECCOMHigh = 0, MEAxialVibration = 0.6, MELoad = 0, METCSpeed = 327.68, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "MISCELLANEOUS" } },
-                            ScavengeAir = new List<ScavengeAirDto>() { new ScavengeAirDto { Id = 51091, MEReceiverTemp = 43, MEFBCyl1Temp = 43, MEFBCyl2Temp = 44, MEFBCyl3Temp = 45, MEFBCyl4Temp = 44, MEFBCyl5Temp = 44, MEFBCyl6Temp = 45, MEPress = 0.1, MECoolerPressDrop = 0, METCInTempA = 26, METCInTempB = 26, ERRelativeHumidity = 34, ERTemp = 14, ERAmbientPress = 1030.8, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "SCAVENGEAIR" } },
-                            ShaftClutch = new List<ShaftClutchDto>() { new ShaftClutchDto { Id = 53235, SternAftTemp = 21, InterTemp = 31, Uploaded = 0, Number = request.Number, ReceiveDatetime = DateTime.UtcNow, DeviceNo = "SHAFTCLUTCH" } },
-                        };
-                        break;
+                        var dailyConsumptionIndex = StaticEntities.StaticEntities.DailyConsumptions.IndexOf(StaticEntities.StaticEntities.DailyConsumptions.FirstOrDefault(t => t.Number == request.Number));
+                        dHFOAcc = Convert.ToDouble(totalIndicator.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].HFOAcc;
+                        dMethanolAcc = Convert.ToDouble(totalIndicator.MethanolAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MethanolAcc;
 
-                    case "ee":
-                        result = new VesselInfo();
-                        break;
+                        dMEHFOAcc = Convert.ToDouble(meFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MEHFOAcc;
+                        dAEHFOAcc = Convert.ToDouble(aeFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AEHFOAcc;
+                        dBLRHFOAcc = Convert.ToDouble(blrFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].BLRHFOAcc;
+                        dMEDGOAcc = Convert.ToDouble(meFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MEDGOAcc;
+                        dAEDGOAcc = Convert.ToDouble(aeFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AEDGOAcc;
+                        dBLRDGOAcc = Convert.ToDouble(blrFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].BLRDGOAcc;
+                    }
+                    catch (Exception) { }
+                    tempResult.Add(new JProperty("ECStatus", ECStatus));
+                    tempResult.Add(new JProperty("EEStatus", EEStatus));
 
-                    default:
-                        result = await _vesselInfoService.GetLatestAsync(request.Number);
-                        //result = new VesselInfo();
-                        var tempResult = result.ToJson().ToJObject();
-                        var fs = new JProperty("Flowmeters", JArray.FromObject(new List<Flowmeter>
-                        {
-                            new Flowmeter{
-                                ConsAct=222,
-                                ConsAcc=333,
-                                Temperature=30,
-                                Density=1.1m,
-                                DeviceType="me",
-                                FuelType="HFO",
-                                DeviceNo="mefuel1"
-                            },
-                            new Flowmeter{
-                                ConsAct=234,
-                                ConsAcc=357,
-                                Temperature=30,
-                                Density=1.1m,
-                                DeviceType="me",
-                                FuelType="HFO",
-                                DeviceNo="mefuel2"
-                            },
-                            new Flowmeter{
-                                ConsAct=45,
-                                ConsAcc=95,
-                                Temperature=20,
-                                Density=0.8m,
-                                DeviceType="me",
-                                FuelType="Methanol",
-                                DeviceNo="memethanol"
-                            }
-                        }));
-                        tempResult.Add(fs);
-                        var ss = new JProperty("Shafts", JArray.FromObject(new List<Shaft>
-                        {
-                            new Shaft{
-                                Power=300,
-                                RPM=240,
-                                Torque=240,
-                                Thrust=240,
-                                DeviceNo="shaft2"
-                            },
-                            new Shaft{
-                                Power=200,
-                                RPM=180,
-                                Torque=180,
-                                Thrust=180,
-                                DeviceNo="shaft1"
-                            }
-                        }));
-                        tempResult.Add(ss);
+                    tempResult.Add(new JProperty("HFOC", HFOC));
+                    tempResult.Add(new JProperty("HFOCPre", HFOCPre));
 
-                        tempResult.Add(new JProperty("CEmission", 0));
-                        tempResult.Add(new JProperty("PreRtCII", 0));
-                        tempResult.Add(new JProperty("PreHFO", 0));
-                        tempResult.Add(new JProperty("PreTW", 0));
-                        tempResult.Add(new JProperty("PreCO2", 0));
-                        tempResult.Add(new JProperty("PreCEmission", 0));
-                        tempResult.Add(new JProperty("ECStatus", "--"));
-                        tempResult.Add(new JProperty("EEStatus", "--"));
+                    tempResult.Add(new JProperty("dHFOAcc", dHFOAcc));
+                    tempResult.Add(new JProperty("dMethanolAcc", dMethanolAcc));
 
-                        result = tempResult;
-                        break;
-                }
+                    tempResult.Add(new JProperty("dMEHFOAcc", dMEHFOAcc));
+                    tempResult.Add(new JProperty("dAEHFOAcc", dAEHFOAcc));
+                    tempResult.Add(new JProperty("dBLRHFOAcc", dBLRHFOAcc));
+                    tempResult.Add(new JProperty("dMEDGOAcc", dMEDGOAcc));
+                    tempResult.Add(new JProperty("dAEDGOAcc", dAEDGOAcc));
+                    tempResult.Add(new JProperty("dBLRDGOAcc", dBLRDGOAcc));
+
+                    result = tempResult;
+                    break;
             }
             resultResponse.Result = Value.Parser.ParseJson(result.ToJson());
             return resultResponse;
