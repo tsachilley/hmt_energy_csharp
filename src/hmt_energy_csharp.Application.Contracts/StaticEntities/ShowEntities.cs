@@ -72,6 +72,6 @@ namespace hmt_energy_csharp.StaticEntities
         public static IList<VesselMiscellaneousDto> Miscellaneouses { get; set; } = new List<VesselMiscellaneousDto>();
         public static IList<VesselScavengeAirDto> ScavengeAirs { get; set; } = new List<VesselScavengeAirDto>();
         public static IList<VesselShaftClutchDto> ShaftClutchs { get; set; } = new List<VesselShaftClutchDto>();
-        public static IList<VesselAssistantDecisionDto> AssistantDecisions { get; set; } = new List<VesselAssistantDecisionDto>() { new VesselAssistantDecisionDto() { Number = "SAD1" } };
+        public static IList<VesselAssistantDecisionDto> AssistantDecisions { get; set; } = new List<VesselAssistantDecisionDto>() { new VesselAssistantDecisionDto() { Number = "NDY1274" } };
     }
 }

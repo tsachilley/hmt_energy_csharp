@@ -12,7 +12,7 @@ namespace hmt_energy_csharp.Energy.Configs
         public decimal? HighHighLimit { get; set; }
         public byte IsDevice { get; set; } = 1;
         public byte IsEnabled { get; set; } = 1;
-        public string Number { get; set; } = "SAD1";
+        public string Number { get; set; } = "NDY1274";
         public DateTime? create_time { get; set; }
         public DateTime? update_time { get; set; }
         public DateTime? delete_time { get; set; }

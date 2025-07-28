@@ -155,7 +155,9 @@ namespace hmt_energy_csharp.ProtocolDatas
                         sentenceDto.vdr_id = number;
 
                         if (!StaticEntities.StaticEntities.Vessels.Any(t => t.SN == number))
+                        {
                             InitVesselAll(number, ReceiveDatetimeFmtDt);
+                        }
                         //获取当前船舶信息
                         var currentVessel = StaticEntities.StaticEntities.Vessels.FirstOrDefault(t => t.SN == number);
                         var indexVessel = StaticEntities.StaticEntities.Vessels.IndexOf(currentVessel);
@@ -315,8 +317,11 @@ namespace hmt_energy_csharp.ProtocolDatas
                                         StaticEntities.StaticEntities.Vessels[indexVessel].Course = Convert.ToDouble(rmcEntity.grdcoz.IsNullOrWhiteSpace() ? "0" : rmcEntity.grdcoz);
                                         StaticEntities.StaticEntities.Vessels[indexVessel].MagneticVariation = Convert.ToDouble(rmcEntity.magvar.IsNullOrWhiteSpace() ? "0" : rmcEntity.magvar);
                                         sentenceDto.category = "rmc";
+                                        _logger.LogWarning("rmc解析3{mc}", StaticEntities.StaticEntities.MonitoredDevices.Count);
+                                        _logger.LogWarning("rmc解析3{mdi}", monitoredDevicesIndex);
                                         StaticEntities.StaticEntities.MonitoredDevices[monitoredDevicesIndex].Devices["gps"] = DateTime.UtcNow;
                                         StaticEntities.StaticEntities.MonitoredDevices[monitoredDevicesIndex].Devices["course"] = DateTime.UtcNow;
+                                        _logger.LogWarning("{CurDatetime}-结束解析rmc", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                                         break;
 
                                     case "RPM":
@@ -424,7 +429,6 @@ namespace hmt_energy_csharp.ProtocolDatas
                 PutShowEntities(number);
 
                 log.AddRange(await CalcVesselInfo(number, bsi));
-                _logger.LogWarning("{CurDatetime}-结束计算:CalcVesselInfo", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             }
             catch (Exception)
             {
@@ -763,7 +767,7 @@ namespace hmt_energy_csharp.ProtocolDatas
 
             #endregion 当前实体
 
-            #region 显示实体
+            /*#region 显示实体
 
             StaticEntities.ShowEntities.Vessels.Add(new VesselInfoDto { SN = number, ReceiveDatetime = receiveDatetime });
 
@@ -911,8 +915,9 @@ namespace hmt_energy_csharp.ProtocolDatas
             else
                 StaticEntities.ShowEntities.AssistantDecisions[StaticEntities.ShowEntities.AssistantDecisions.IndexOf(lstAssistantDecisionsShow)].AssistantDecisionDtos.Clear();
 
-            #endregion 显示实体
+            #endregion 显示实体*/
 
+            _logger.LogWarning("初始化当前船舶3");
             #region 设备监测
 
             var monitoredDevices = new Dictionary<string, DateTime>();
@@ -930,6 +935,8 @@ namespace hmt_energy_csharp.ProtocolDatas
             }
 
             #endregion 设备监测
+
+            _logger.LogWarning("初始化当前船舶完成");
         }
 
         /// <summary>
@@ -1024,8 +1031,6 @@ namespace hmt_energy_csharp.ProtocolDatas
 
             var indexPredictions = StaticEntities.StaticEntities.Predictions.IndexOf(StaticEntities.StaticEntities.Predictions.FirstOrDefault(t => t.Number == number));
             var predictions = new PredictionDto { Number = number, ReceiveDatetime = vessel.ReceiveDatetime };
-
-            _logger.LogWarning("{CurDatetime}-开始计算:CalcVesselInfo1", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             //流量计合计数据
             foreach (var flowmeter in flowmeters)
@@ -1616,8 +1621,6 @@ namespace hmt_energy_csharp.ProtocolDatas
                 }*/
             }
 
-            _logger.LogWarning("{CurDatetime}-开始计算:CalcVesselInfo2", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-
             bsi.Pitch = (bsi.Pitch == 0 || bsi.Pitch is null) ? 5128.77 : bsi.Pitch;
             var tempSlip = 0m;
             CriteriaDto criteriaDto = new CriteriaDto();
@@ -1635,8 +1638,6 @@ namespace hmt_energy_csharp.ProtocolDatas
             }
             vessel.Slip = Math.Round((double)(1 - tempSlip) * 100, 2);
 
-            _logger.LogWarning("{CurDatetime}-开始计算:CalcVesselInfo3", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-
             var TotalHFO = totalIndicator.HFO ?? 0;
             var TotalMethanol = totalIndicator.Methanol ?? 0;
             var TotalPower = totalIndicator.Power ?? 0;
@@ -1648,8 +1649,6 @@ namespace hmt_energy_csharp.ProtocolDatas
             vessel.Torque = Convert.ToDouble(totalIndicator.Torque ?? 0);
             vessel.Thrust = Convert.ToDouble(totalIndicator.Thrust ?? 0);
 
-            _logger.LogWarning("{CurDatetime}-开始计算:CalcVesselInfo4", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-
             vessel.SFOC = TotalPower == 0 ? 0 : (double)(((totalIndicator.DGO ?? 0) + (totalIndicator.LFO ?? 0) + (totalIndicator.HFO ?? 0) + (totalIndicator.LPG_P ?? 0) + (totalIndicator.LPG_B ?? 0) + (totalIndicator.LNG ?? 0) + (totalIndicator.Methanol ?? 0) + (totalIndicator.Ethanol ?? 0)) / TotalPower);
             vessel.FCPerNm = (vessel.GroundSpeed ?? 0) == 0 ? 0 : (double)((totalIndicator.DGO ?? 0) + (totalIndicator.LFO ?? 0) + (totalIndicator.HFO ?? 0) + (totalIndicator.LPG_P ?? 0) + (totalIndicator.LPG_B ?? 0) + (totalIndicator.LNG ?? 0) + (totalIndicator.Methanol ?? 0) + (totalIndicator.Ethanol ?? 0)) / vessel.GroundSpeed;
 
@@ -1658,8 +1657,6 @@ namespace hmt_energy_csharp.ProtocolDatas
 
             vessel.DGFCPerNm = (vessel.GroundSpeed ?? 0) == 0 ? 0 : (double)((AEFuel.DGO ?? 0) + (AEFuel.LFO ?? 0) + (AEFuel.HFO ?? 0) + (AEFuel.LPG_P ?? 0) + (AEFuel.LPG_B ?? 0) + (AEFuel.LNG ?? 0) + (AEFuel.Methanol ?? 0) + (AEFuel.Ethanol ?? 0)) / vessel.GroundSpeed;
             vessel.BLRFCPerNm = (vessel.GroundSpeed ?? 0) == 0 ? 0 : (double)((BLRFuel.DGO ?? 0) + (BLRFuel.LFO ?? 0) + (BLRFuel.HFO ?? 0) + (BLRFuel.LPG_P ?? 0) + (BLRFuel.LPG_B ?? 0) + (BLRFuel.LNG ?? 0) + (BLRFuel.Methanol ?? 0) + (BLRFuel.Ethanol ?? 0)) / vessel.GroundSpeed;
-
-            _logger.LogWarning("{CurDatetime}-开始计算:CalcVesselInfo5", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             vessel.MEHFOConsumption = (double)(MEFuel.HFO ?? 0);
             vessel.DGHFOConsumption = (double)(AEFuel.HFO ?? 0);
@@ -1687,8 +1684,6 @@ namespace hmt_energy_csharp.ProtocolDatas
 
             vessel.Status = GetStatus(number);
 
-            _logger.LogWarning("{CurDatetime}-开始计算:CalcVesselInfo6", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-
             var tonnage = 0f;
             if (bsi.ShipType.Contains("LNG carrier") ||
                 bsi.ShipType.Contains("bulk carrier") ||
@@ -1704,8 +1699,6 @@ namespace hmt_energy_csharp.ProtocolDatas
 
             vessel.RtCII = Math.Round(Convert.ToDouble((totalIndicator.HFO ?? 0) * 3.114m + (totalIndicator.LFO ?? 0) * 3.151m + (totalIndicator.DGO ?? 0) * 3.206m + (totalIndicator.Methanol ?? 0) * 1.375m + (totalIndicator.Ethanol ?? 0) * 1.913m + (totalIndicator.LPG_P ?? 0) * 3m + (totalIndicator.LPG_B ?? 0) * 3.03m + (totalIndicator.LNG ?? 0) * 2.75m) * 1000 / Convert.ToDouble(tonnage * vessel.GroundSpeed), 2);
 
-            _logger.LogWarning("{CurDatetime}-开始计算:CalcVesselInfo7", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-
             //预测接口使用
             try
             {
@@ -1720,8 +1713,6 @@ namespace hmt_energy_csharp.ProtocolDatas
             catch (Exception ex) { }
             //没有预测接口时使用
             //predictions.HFO = 100;
-
-            _logger.LogWarning("{CurDatetime}-开始计算:CalcVesselInfo8", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             StaticEntities.StaticEntities.Predictions[indexPredictions] = predictions;
             StaticEntities.StaticEntities.TotalIndicators[indexTotalIndicator] = totalIndicator;
@@ -1745,8 +1736,6 @@ namespace hmt_energy_csharp.ProtocolDatas
                 StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].Today = vessel.ReceiveDatetime;
             }
             //}
-
-            _logger.LogWarning("{CurDatetime}-开始计算:CalcVesselInfo9", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             return result;
         }
