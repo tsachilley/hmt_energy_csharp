@@ -50,466 +50,466 @@ using UdpClient = NetCoreServer.UdpClient;
 
 namespace hmt_energy_csharp.Services
 {
-    public class UdpService : IHostedService
-    {
-        public EEUdpServer udpServer { get; set; }
-        public TabletUdpClient tabletUdpClient { get; set; }
+	public class UdpService : IHostedService
+	{
+		public EEUdpServer udpServer { get; set; }
+		public TabletUdpClient tabletUdpClient { get; set; }
 
-        private readonly IConfiguration _configuration;
-        private readonly IConsulService _consulService;
-        private readonly IWhiteListAppService _whiteList;
-        private readonly IVDRService _vdrService;
-        private readonly DiagnosticsConfig _diagnosticsConfig;
-        private readonly IProtocolDataService _protocolDataService;
-        private readonly IConfigService _configService;
-        private readonly IVesselInfoService _vesselInfoService;
+		private readonly IConfiguration _configuration;
+		private readonly IConsulService _consulService;
+		private readonly IWhiteListAppService _whiteList;
+		private readonly IVDRService _vdrService;
+		private readonly DiagnosticsConfig _diagnosticsConfig;
+		private readonly IProtocolDataService _protocolDataService;
+		private readonly IConfigService _configService;
+		private readonly IVesselInfoService _vesselInfoService;
 
-        public ClientWebSocket ClientWebSocket { get; set; }
+		public ClientWebSocket ClientWebSocket { get; set; }
 
-        public UdpService(IConfiguration configuration, IConsulService consulService, IWhiteListAppService whiteList, IVDRService vdrService, DiagnosticsConfig diagnosticsConfig, IProtocolDataService protocolDataService, IConfigService configService, IVesselInfoService vesselInfoService)
-        {
-            _configuration = configuration;
-            _consulService = consulService;
-            _whiteList = whiteList;
-            _vdrService = vdrService;
-            _diagnosticsConfig = diagnosticsConfig;
-            _protocolDataService = protocolDataService;
-            _configService = configService;
-            _vesselInfoService = vesselInfoService;
-        }
+		public UdpService(IConfiguration configuration, IConsulService consulService, IWhiteListAppService whiteList, IVDRService vdrService, DiagnosticsConfig diagnosticsConfig, IProtocolDataService protocolDataService, IConfigService configService, IVesselInfoService vesselInfoService)
+		{
+			_configuration = configuration;
+			_consulService = consulService;
+			_whiteList = whiteList;
+			_vdrService = vdrService;
+			_diagnosticsConfig = diagnosticsConfig;
+			_protocolDataService = protocolDataService;
+			_configService = configService;
+			_vesselInfoService = vesselInfoService;
+		}
 
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            #region 展示数据进行初始化
-            var number = _configuration["ShipInfo:SN"] ?? "SAD1";
-            var SN = number;
-            //需单独初始化 否则不访问船端页面不会进行赋值
-            if (!StaticEntities.ShowEntities.Vessels.Any(t => t.SN == number))
-            {
-                var lastestVessel = await _vesselInfoService.GetLatestAsync(number);
-                StaticEntities.ShowEntities.Vessels.Add(lastestVessel);
-                StaticEntities.ShowEntities.Flowmeters.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.Batteries.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.Generators.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.LiquidLevels.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.SupplyUnits.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.Shafts.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.SternSealings.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.PowerUnits.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.TotalIndicators.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.Predictions.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.AssistantDecisions.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.CompositeBoilers.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.CompressedAirSupplies.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.CoolingFreshWaters.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.CoolingSeaWaters.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.CoolingWaters.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.CylinderLubOils.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.ExhaustGases.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.FOs.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.FOSupplyUnits.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.LubOilPurifyings.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.LubOils.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.MainGeneratorSets.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.MainSwitchboards.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.MERemoteControls.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.Miscellaneouses.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.ScavengeAirs.RemoveAll(t => t.Number == number);
-                StaticEntities.ShowEntities.ShaftClutchs.RemoveAll(t => t.Number == number);
-                await _vesselInfoService.GetLatestInfosAsync(lastestVessel.SN, lastestVessel.ReceiveDatetime);
-            }
+		public async Task StartAsync(CancellationToken cancellationToken)
+		{
+			#region 展示数据进行初始化
+			var number = _configuration["ShipInfo:SN"] ?? "NDY1274";
+			var SN = number;
+			//需单独初始化 否则不访问船端页面不会进行赋值
+			if (!StaticEntities.ShowEntities.Vessels.Any(t => t.SN == number))
+			{
+				var lastestVessel = await _vesselInfoService.GetLatestAsync(number);
+				StaticEntities.ShowEntities.Vessels.Add(lastestVessel);
+				StaticEntities.ShowEntities.Flowmeters.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.Batteries.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.Generators.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.LiquidLevels.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.SupplyUnits.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.Shafts.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.SternSealings.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.PowerUnits.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.TotalIndicators.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.Predictions.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.AssistantDecisions.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.CompositeBoilers.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.CompressedAirSupplies.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.CoolingFreshWaters.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.CoolingSeaWaters.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.CoolingWaters.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.CylinderLubOils.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.ExhaustGases.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.FOs.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.FOSupplyUnits.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.LubOilPurifyings.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.LubOils.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.MainGeneratorSets.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.MainSwitchboards.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.MERemoteControls.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.Miscellaneouses.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.ScavengeAirs.RemoveAll(t => t.Number == number);
+				StaticEntities.ShowEntities.ShaftClutchs.RemoveAll(t => t.Number == number);
+				await _vesselInfoService.GetLatestInfosAsync(lastestVessel.SN, lastestVessel.ReceiveDatetime);
+			}
 
-            #endregion
+			#endregion
 
-            udpServer = new EEUdpServer(IPAddress.Any, Convert.ToInt32(_configuration.GetSection("UdpServer")["Port"]), _consulService, _whiteList, _vdrService, _diagnosticsConfig, _protocolDataService, _configService, _configuration);
-            udpServer?.Start();
-            StaticEntities.StaticEntities.Configs = await _configService.GetList("{\"IsEnabled\":\"1\"}");
+			udpServer = new EEUdpServer(IPAddress.Any, Convert.ToInt32(_configuration.GetSection("UdpServer")["Port"]), _consulService, _whiteList, _vdrService, _diagnosticsConfig, _protocolDataService, _configService, _configuration);
+			udpServer?.Start();
+			StaticEntities.StaticEntities.Configs = await _configService.GetList("{\"IsEnabled\":\"1\"}");
 
-            #region 启动平板UDP客户端
+			#region 启动平板UDP客户端
 
-            tabletUdpClient = new TabletUdpClient(_configuration.GetSection("UdpTabletClient")["Address"], Convert.ToInt32(_configuration.GetSection("UdpTabletClient")["Port"]), _configuration["ShipInfo:SN"] ?? "SAD1");
-            _ = Task.Run(async () =>
-            {
-                while (!tabletUdpClient._stop)
-                {
-                    try
-                    {
-                        if (!tabletUdpClient.IsConnected)
-                        {
-                            tabletUdpClient.Connect();
-                            Log.Information("udptablet重新连接");
-                        }
-                        else
-                            tabletUdpClient.Send("$$$hellotablet$$$");
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
-                    }
-                    await Task.Delay(30 * 1000);
-                }
-            }, cancellationToken);
+			tabletUdpClient = new TabletUdpClient(_configuration.GetSection("UdpTabletClient")["Address"], Convert.ToInt32(_configuration.GetSection("UdpTabletClient")["Port"]), _configuration["ShipInfo:SN"] ?? "NDY1274");
+			_ = Task.Run(async () =>
+			{
+				while (!tabletUdpClient._stop)
+				{
+					try
+					{
+						if (!tabletUdpClient.IsConnected)
+						{
+							tabletUdpClient.Connect();
+							Log.Information("udptablet重新连接");
+						}
+						else
+							tabletUdpClient.Send("$$$hellotablet$$$");
+					}
+					catch (Exception ex)
+					{
+						Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
+					}
+					await Task.Delay(30 * 1000);
+				}
+			}, cancellationToken);
 
-            //开始发送机舱数据
-            _ = Task.Run(async () =>
-            {
-                while (!tabletUdpClient._stop)
-                {
-                    try
-                    {
-                        if (StaticEntities.ShowEntities.Vessels.Any(t => t.SN == SN))
-                        {
-                            tabletUdpClient.Send((new { CompositeBoiler = StaticEntities.ShowEntities.CompositeBoilers.FirstOrDefault(t => t.Number == SN).CompositeBoilerDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CompressedAirSupply = StaticEntities.ShowEntities.CompressedAirSupplies.FirstOrDefault(t => t.Number == SN).CompressedAirSupplyDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CoolingFreshWater = StaticEntities.ShowEntities.CoolingFreshWaters.FirstOrDefault(t => t.Number == SN).CoolingFreshWaterDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CoolingSeaWater = StaticEntities.ShowEntities.CoolingSeaWaters.FirstOrDefault(t => t.Number == SN).CoolingSeaWaterDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CoolingWater = StaticEntities.ShowEntities.CoolingWaters.FirstOrDefault(t => t.Number == SN).CoolingWaterDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CylinderLubOil = StaticEntities.ShowEntities.CylinderLubOils.FirstOrDefault(t => t.Number == SN).CylinderLubOilDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { ExhaustGas = StaticEntities.ShowEntities.ExhaustGases.FirstOrDefault(t => t.Number == SN).ExhaustGasDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { FO = StaticEntities.ShowEntities.FOs.FirstOrDefault(t => t.Number == SN).FODtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { FOSupplyUnit = StaticEntities.ShowEntities.FOSupplyUnits.FirstOrDefault(t => t.Number == SN).FOSupplyUnitDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { LubOilPurifying = StaticEntities.ShowEntities.LubOilPurifyings.FirstOrDefault(t => t.Number == SN).LubOilPurifyingDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { LubOil = StaticEntities.ShowEntities.LubOils.FirstOrDefault(t => t.Number == SN).LubOilDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { MainGeneratorSet = StaticEntities.ShowEntities.MainGeneratorSets.FirstOrDefault(t => t.Number == SN).MainGeneratorSetDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { MainSwitchboard = StaticEntities.ShowEntities.MainSwitchboards.FirstOrDefault(t => t.Number == SN).MainSwitchboardDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { MERemoteControl = StaticEntities.ShowEntities.MERemoteControls.FirstOrDefault(t => t.Number == SN).MERemoteControlDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { Miscellaneous = StaticEntities.ShowEntities.Miscellaneouses.FirstOrDefault(t => t.Number == SN).MiscellaneousDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { ScavengeAir = StaticEntities.ShowEntities.ScavengeAirs.FirstOrDefault(t => t.Number == SN).ScavengeAirDtos, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { ShaftClutch = StaticEntities.ShowEntities.ShaftClutchs.FirstOrDefault(t => t.Number == SN).ShaftClutchDtos, }).ToJson());
-                        }
-                        else
-                        {
-                            tabletUdpClient.Send((new { CompositeBoiler = new List<CompositeBoilerDto>() { new CompositeBoilerDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CompressedAirSupply = new List<CompressedAirSupplyDto>() { new CompressedAirSupplyDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CoolingFreshWater = new List<CoolingFreshWaterDto>() { new CoolingFreshWaterDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CoolingSeaWater = new List<CoolingSeaWaterDto>() { new CoolingSeaWaterDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CoolingWater = new List<CoolingWaterDto>() { new CoolingWaterDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { CylinderLubOil = new List<CylinderLubOilDto>() { new CylinderLubOilDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { ExhaustGas = new List<ExhaustGasDto>() { new ExhaustGasDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { FO = new List<FODto>() { new FODto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { FOSupplyUnit = new List<FOSupplyUnitDto>() { new FOSupplyUnitDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { LubOilPurifying = new List<LubOilPurifyingDto>() { new LubOilPurifyingDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { LubOil = new List<LubOilDto>() { new LubOilDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { MainGeneratorSet = new List<MainGeneratorSetDto>() { new MainGeneratorSetDto(), new MainGeneratorSetDto(), new MainGeneratorSetDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { MainSwitchboard = new List<MainSwitchboardDto>() { new MainSwitchboardDto(), new MainSwitchboardDto(), new MainSwitchboardDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { MERemoteControl = new List<MERemoteControlDto>() { new MERemoteControlDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { Miscellaneous = new List<MiscellaneousDto>() { new MiscellaneousDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { ScavengeAir = new List<ScavengeAirDto>() { new ScavengeAirDto() }, }).ToJson());
-                            await Task.Delay(100);
-                            tabletUdpClient.Send((new { ShaftClutch = new List<ShaftClutchDto>() { new ShaftClutchDto() }, }).ToJson());
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
-                    }
-                    await Task.Delay(10 * 1000);
-                }
-            }, cancellationToken);
+			//开始发送机舱数据
+			_ = Task.Run(async () =>
+			{
+				while (!tabletUdpClient._stop)
+				{
+					try
+					{
+						if (StaticEntities.ShowEntities.Vessels.Any(t => t.SN == SN))
+						{
+							tabletUdpClient.Send((new { CompositeBoiler = StaticEntities.ShowEntities.CompositeBoilers.FirstOrDefault(t => t.Number == SN).CompositeBoilerDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CompressedAirSupply = StaticEntities.ShowEntities.CompressedAirSupplies.FirstOrDefault(t => t.Number == SN).CompressedAirSupplyDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CoolingFreshWater = StaticEntities.ShowEntities.CoolingFreshWaters.FirstOrDefault(t => t.Number == SN).CoolingFreshWaterDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CoolingSeaWater = StaticEntities.ShowEntities.CoolingSeaWaters.FirstOrDefault(t => t.Number == SN).CoolingSeaWaterDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CoolingWater = StaticEntities.ShowEntities.CoolingWaters.FirstOrDefault(t => t.Number == SN).CoolingWaterDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CylinderLubOil = StaticEntities.ShowEntities.CylinderLubOils.FirstOrDefault(t => t.Number == SN).CylinderLubOilDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { ExhaustGas = StaticEntities.ShowEntities.ExhaustGases.FirstOrDefault(t => t.Number == SN).ExhaustGasDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { FO = StaticEntities.ShowEntities.FOs.FirstOrDefault(t => t.Number == SN).FODtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { FOSupplyUnit = StaticEntities.ShowEntities.FOSupplyUnits.FirstOrDefault(t => t.Number == SN).FOSupplyUnitDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { LubOilPurifying = StaticEntities.ShowEntities.LubOilPurifyings.FirstOrDefault(t => t.Number == SN).LubOilPurifyingDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { LubOil = StaticEntities.ShowEntities.LubOils.FirstOrDefault(t => t.Number == SN).LubOilDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { MainGeneratorSet = StaticEntities.ShowEntities.MainGeneratorSets.FirstOrDefault(t => t.Number == SN).MainGeneratorSetDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { MainSwitchboard = StaticEntities.ShowEntities.MainSwitchboards.FirstOrDefault(t => t.Number == SN).MainSwitchboardDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { MERemoteControl = StaticEntities.ShowEntities.MERemoteControls.FirstOrDefault(t => t.Number == SN).MERemoteControlDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { Miscellaneous = StaticEntities.ShowEntities.Miscellaneouses.FirstOrDefault(t => t.Number == SN).MiscellaneousDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { ScavengeAir = StaticEntities.ShowEntities.ScavengeAirs.FirstOrDefault(t => t.Number == SN).ScavengeAirDtos, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { ShaftClutch = StaticEntities.ShowEntities.ShaftClutchs.FirstOrDefault(t => t.Number == SN).ShaftClutchDtos, }).ToJson());
+						}
+						else
+						{
+							tabletUdpClient.Send((new { CompositeBoiler = new List<CompositeBoilerDto>() { new CompositeBoilerDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CompressedAirSupply = new List<CompressedAirSupplyDto>() { new CompressedAirSupplyDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CoolingFreshWater = new List<CoolingFreshWaterDto>() { new CoolingFreshWaterDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CoolingSeaWater = new List<CoolingSeaWaterDto>() { new CoolingSeaWaterDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CoolingWater = new List<CoolingWaterDto>() { new CoolingWaterDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { CylinderLubOil = new List<CylinderLubOilDto>() { new CylinderLubOilDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { ExhaustGas = new List<ExhaustGasDto>() { new ExhaustGasDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { FO = new List<FODto>() { new FODto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { FOSupplyUnit = new List<FOSupplyUnitDto>() { new FOSupplyUnitDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { LubOilPurifying = new List<LubOilPurifyingDto>() { new LubOilPurifyingDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { LubOil = new List<LubOilDto>() { new LubOilDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { MainGeneratorSet = new List<MainGeneratorSetDto>() { new MainGeneratorSetDto(), new MainGeneratorSetDto(), new MainGeneratorSetDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { MainSwitchboard = new List<MainSwitchboardDto>() { new MainSwitchboardDto(), new MainSwitchboardDto(), new MainSwitchboardDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { MERemoteControl = new List<MERemoteControlDto>() { new MERemoteControlDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { Miscellaneous = new List<MiscellaneousDto>() { new MiscellaneousDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { ScavengeAir = new List<ScavengeAirDto>() { new ScavengeAirDto() }, }).ToJson());
+							await Task.Delay(100);
+							tabletUdpClient.Send((new { ShaftClutch = new List<ShaftClutchDto>() { new ShaftClutchDto() }, }).ToJson());
+						}
+					}
+					catch (Exception ex)
+					{
+						Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
+					}
+					await Task.Delay(10 * 1000);
+				}
+			}, cancellationToken);
 
-            #endregion 启动平板UDP客户端
+			#endregion 启动平板UDP客户端
 
-            Log.Information("HostStart启动");
-        }
+			Log.Information("HostStart启动");
+		}
 
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            udpServer?.Stop();
-            tabletUdpClient?.DisconnectAndStop();
-        }
-    }
+		public async Task StopAsync(CancellationToken cancellationToken)
+		{
+			udpServer?.Stop();
+			tabletUdpClient?.DisconnectAndStop();
+		}
+	}
 
-    public class EEUdpServer : UdpServer
-    {
-        private readonly IConsulService _consulService;
-        private readonly IWhiteListAppService _whiteList;
-        private readonly IVDRService _vdrService;
-        private readonly DiagnosticsConfig _diagnosticsConfig;
-        private readonly IProtocolDataService _protocolDataService;
-        private readonly IConfigService _configService;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<EEUdpServer> _logger;
+	public class EEUdpServer : UdpServer
+	{
+		private readonly IConsulService _consulService;
+		private readonly IWhiteListAppService _whiteList;
+		private readonly IVDRService _vdrService;
+		private readonly DiagnosticsConfig _diagnosticsConfig;
+		private readonly IProtocolDataService _protocolDataService;
+		private readonly IConfigService _configService;
+		private readonly IConfiguration _configuration;
+		private readonly ILogger<EEUdpServer> _logger;
 
-        public ClientWebSocket _clientWS { get; set; }
-        public ClientWebSocket ClientWebSocket { get; set; }
+		public ClientWebSocket _clientWS { get; set; }
+		public ClientWebSocket ClientWebSocket { get; set; }
 
-        public JObject JECA { get; set; }
-        public string TurfJs { get; set; }
-        public Engine JintEngine { get; set; }
+		public JObject JECA { get; set; }
+		public string TurfJs { get; set; }
+		public Engine JintEngine { get; set; }
 
-        public int shipId { get; set; } = -1;
+		public int shipId { get; set; } = -1;
 
-        public EEUdpServer(IPAddress address, int port, IConsulService consulService, IWhiteListAppService whiteList, IVDRService vdrService, DiagnosticsConfig diagnosticsConfig, IProtocolDataService protocolDataService, IConfigService configService, IConfiguration configuration) : base(address, port)
-        {
-            _consulService = consulService;
-            _whiteList = whiteList;
-            _vdrService = vdrService;
-            _diagnosticsConfig = diagnosticsConfig;
-            _protocolDataService = protocolDataService;
-            _configService = configService;
-            _configuration = configuration;
-            _logger = NullLogger<EEUdpServer>.Instance;
-        }
+		public EEUdpServer(IPAddress address, int port, IConsulService consulService, IWhiteListAppService whiteList, IVDRService vdrService, DiagnosticsConfig diagnosticsConfig, IProtocolDataService protocolDataService, IConfigService configService, IConfiguration configuration) : base(address, port)
+		{
+			_consulService = consulService;
+			_whiteList = whiteList;
+			_vdrService = vdrService;
+			_diagnosticsConfig = diagnosticsConfig;
+			_protocolDataService = protocolDataService;
+			_configService = configService;
+			_configuration = configuration;
+			_logger = NullLogger<EEUdpServer>.Instance;
+		}
 
-        protected override void OnStarted()
-        {
-            var number = _configuration["ShipInfo:SN"] ?? "SAD1";
-            Log.Information($"{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UDP服务器信息=>{Endpoint}");
+		protected override void OnStarted()
+		{
+			var number = _configuration["ShipInfo:SN"] ?? "NDY1274";
+			Log.Information($"{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UDP服务器信息=>{Endpoint}");
 
-            // Start receive datagrams
-            ReceiveAsync();
+			// Start receive datagrams
+			ReceiveAsync();
 
-            // 打开报警用ws
-            try
-            {
-                _clientWS = new ClientWebSocket();
-                _clientWS.ConnectAsync(new Uri(_configuration["websockect:url"]), CancellationToken.None).Wait();
-                if (_clientWS != null)
-                {
-                    _ = Task.Factory.StartNew(async () =>
-                    {
-                        var buffer = ArrayPool<byte>.Shared.Rent(1024);
-                        try
-                        {
-                            while (_clientWS.State == WebSocketState.Open)
-                            {
-                                var result = await _clientWS.ReceiveAsync(buffer, CancellationToken.None);
-                                if (result.MessageType == WebSocketMessageType.Close)
-                                {
-                                    throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription);
-                                }
-                                var text = Encoding.UTF8.GetString(buffer.AsSpan(0, result.Count));
-                                /* 判断是否接通websockect
+			// 打开报警用ws
+			try
+			{
+				_clientWS = new ClientWebSocket();
+				_clientWS.ConnectAsync(new Uri(_configuration["websockect:url"]), CancellationToken.None).Wait();
+				if (_clientWS != null)
+				{
+					_ = Task.Factory.StartNew(async () =>
+					{
+						var buffer = ArrayPool<byte>.Shared.Rent(1024);
+						try
+						{
+							while (_clientWS.State == WebSocketState.Open)
+							{
+								var result = await _clientWS.ReceiveAsync(buffer, CancellationToken.None);
+								if (result.MessageType == WebSocketMessageType.Close)
+								{
+									throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription);
+								}
+								var text = Encoding.UTF8.GetString(buffer.AsSpan(0, result.Count));
+								/* 判断是否接通websockect
                                  * var tempJO = JObject.Parse(text);
                                 if (!tempJO.ContainsKey("code") || tempJO["code"].ToString() != "314008")
                                     await Console.Out.WriteLineAsync(text);*/
-                            }
-                        }
-                        finally
-                        {
-                            ArrayPool<byte>.Shared.Return(buffer);
-                        }
-                    });
-                }
-                else
-                {
-                    Log.Information("WebSocket连接失败。");
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+							}
+						}
+						finally
+						{
+							ArrayPool<byte>.Shared.Return(buffer);
+						}
+					});
+				}
+				else
+				{
+					Log.Information("WebSocket连接失败。");
+				}
+			}
+			catch (Exception)
+			{
+				throw;
+			}
 
-            // 打开实时数据上传用ws
-            try
-            {
-                ClientWebSocket = new ClientWebSocket();
-                ClientWebSocket.ConnectAsync(new Uri(_configuration["wsshipend:url"]), CancellationToken.None).Wait();
-                if (ClientWebSocket != null)
-                {
-                    _ = Task.Factory.StartNew(async () =>
-                    {
-                        var buffer = ArrayPool<byte>.Shared.Rent(1024);
-                        try
-                        {
-                            while (ClientWebSocket.State == WebSocketState.Open)
-                            {
-                                var result = await ClientWebSocket.ReceiveAsync(buffer, CancellationToken.None);
-                                if (result.MessageType == WebSocketMessageType.Close)
-                                {
-                                    throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription);
-                                }
-                                var text = Encoding.UTF8.GetString(buffer.AsSpan(0, result.Count));
-                                /*//判断是否接通websockect
+			// 打开实时数据上传用ws
+			try
+			{
+				ClientWebSocket = new ClientWebSocket();
+				ClientWebSocket.ConnectAsync(new Uri(_configuration["wsshipend:url"]), CancellationToken.None).Wait();
+				if (ClientWebSocket != null)
+				{
+					_ = Task.Factory.StartNew(async () =>
+					{
+						var buffer = ArrayPool<byte>.Shared.Rent(1024);
+						try
+						{
+							while (ClientWebSocket.State == WebSocketState.Open)
+							{
+								var result = await ClientWebSocket.ReceiveAsync(buffer, CancellationToken.None);
+								if (result.MessageType == WebSocketMessageType.Close)
+								{
+									throw new WebSocketException(WebSocketError.ConnectionClosedPrematurely, result.CloseStatusDescription);
+								}
+								var text = Encoding.UTF8.GetString(buffer.AsSpan(0, result.Count));
+								/*//判断是否接通websockect
                                 var tempJO = JObject.Parse(text);
                                 if (!tempJO.ContainsKey("code") || tempJO["code"].ToString() != "314008")
                                 {
                                     await Console.Out.WriteLineAsync(text);
                                 }*/
-                            }
-                        }
-                        finally
-                        {
-                            ArrayPool<byte>.Shared.Return(buffer);
-                        }
-                    });
+							}
+						}
+						finally
+						{
+							ArrayPool<byte>.Shared.Return(buffer);
+						}
+					});
 
-                    Task.Run(async () =>
-                    {
-                        #region 实时数据通过ws上传云端
+					Task.Run(async () =>
+					{
+						#region 实时数据通过ws上传云端
 
-                        try
-                        {
-                            var number = _configuration["ShipInfo:SN"] ?? "SAD1";
-                            var rtInfos = new
-                            {
-                                vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == number),
-                                flowmeter = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == number),
-                                battery = StaticEntities.ShowEntities.Batteries.FirstOrDefault(t => t.Number == number),
-                                generator = StaticEntities.ShowEntities.Generators.FirstOrDefault(t => t.Number == number),
-                                liquidLevel = StaticEntities.ShowEntities.LiquidLevels.FirstOrDefault(t => t.Number == number),
-                                supplyUnit = StaticEntities.ShowEntities.SupplyUnits.FirstOrDefault(t => t.Number == number),
-                                shaft = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == number),
-                                sternSealing = StaticEntities.ShowEntities.SternSealings.FirstOrDefault(t => t.Number == number),
-                                powerUnit = StaticEntities.ShowEntities.PowerUnits.FirstOrDefault(t => t.Number == number),
-                                totalIndicator = StaticEntities.ShowEntities.TotalIndicators.FirstOrDefault(t => t.Number == number),
-                                prediction = StaticEntities.ShowEntities.Predictions.FirstOrDefault(t => t.Number == number),
-                                AssistantDecisions = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number),
-                                CompositeBoilers = StaticEntities.ShowEntities.CompositeBoilers.FirstOrDefault(t => t.Number == number),
-                                CompressedAirSupplies = StaticEntities.ShowEntities.CompressedAirSupplies.FirstOrDefault(t => t.Number == number),
-                                CoolingFreshWaters = StaticEntities.ShowEntities.CoolingFreshWaters.FirstOrDefault(t => t.Number == number),
-                                CoolingSeaWaters = StaticEntities.ShowEntities.CoolingSeaWaters.FirstOrDefault(t => t.Number == number),
-                                CoolingWaters = StaticEntities.ShowEntities.CoolingWaters.FirstOrDefault(t => t.Number == number),
-                                CylinderLubOils = StaticEntities.ShowEntities.CylinderLubOils.FirstOrDefault(t => t.Number == number),
-                                ExhaustGases = StaticEntities.ShowEntities.ExhaustGases.FirstOrDefault(t => t.Number == number),
-                                FOs = StaticEntities.ShowEntities.FOs.FirstOrDefault(t => t.Number == number),
-                                FOSupplyUnits = StaticEntities.ShowEntities.FOSupplyUnits.FirstOrDefault(t => t.Number == number),
-                                LubOilPurifyings = StaticEntities.ShowEntities.LubOilPurifyings.FirstOrDefault(t => t.Number == number),
-                                LubOils = StaticEntities.ShowEntities.LubOils.FirstOrDefault(t => t.Number == number),
-                                MainGeneratorSets = StaticEntities.ShowEntities.MainGeneratorSets.FirstOrDefault(t => t.Number == number),
-                                MainSwitchboards = StaticEntities.ShowEntities.MainSwitchboards.FirstOrDefault(t => t.Number == number),
-                                MERemoteControls = StaticEntities.ShowEntities.MERemoteControls.FirstOrDefault(t => t.Number == number),
-                                Miscellaneouses = StaticEntities.ShowEntities.Miscellaneouses.FirstOrDefault(t => t.Number == number),
-                                ScavengeAirs = StaticEntities.ShowEntities.ScavengeAirs.FirstOrDefault(t => t.Number == number),
-                                ShaftClutchs = StaticEntities.ShowEntities.ShaftClutchs.FirstOrDefault(t => t.Number == number),
-                            };
-                            while (true)
-                            {
-                                if (ClientWebSocket.State == WebSocketState.Open)
-                                {
-                                    try
-                                    {
-                                        await ClientWebSocket.SendAsync(Encoding.UTF8.GetBytes(rtInfos.ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        _logger.LogError(ex, "实时数据通过ws发送云端失败。");
-                                    }
-                                }
-                                await Task.Delay(10 * 1000);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "实时数据上云初始化数据失败。");
-                        }
+						try
+						{
+							var number = _configuration["ShipInfo:SN"] ?? "NDY1274";
+							var rtInfos = new
+							{
+								vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == number),
+								flowmeter = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == number),
+								battery = StaticEntities.ShowEntities.Batteries.FirstOrDefault(t => t.Number == number),
+								generator = StaticEntities.ShowEntities.Generators.FirstOrDefault(t => t.Number == number),
+								liquidLevel = StaticEntities.ShowEntities.LiquidLevels.FirstOrDefault(t => t.Number == number),
+								supplyUnit = StaticEntities.ShowEntities.SupplyUnits.FirstOrDefault(t => t.Number == number),
+								shaft = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == number),
+								sternSealing = StaticEntities.ShowEntities.SternSealings.FirstOrDefault(t => t.Number == number),
+								powerUnit = StaticEntities.ShowEntities.PowerUnits.FirstOrDefault(t => t.Number == number),
+								totalIndicator = StaticEntities.ShowEntities.TotalIndicators.FirstOrDefault(t => t.Number == number),
+								prediction = StaticEntities.ShowEntities.Predictions.FirstOrDefault(t => t.Number == number),
+								AssistantDecisions = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number),
+								CompositeBoilers = StaticEntities.ShowEntities.CompositeBoilers.FirstOrDefault(t => t.Number == number),
+								CompressedAirSupplies = StaticEntities.ShowEntities.CompressedAirSupplies.FirstOrDefault(t => t.Number == number),
+								CoolingFreshWaters = StaticEntities.ShowEntities.CoolingFreshWaters.FirstOrDefault(t => t.Number == number),
+								CoolingSeaWaters = StaticEntities.ShowEntities.CoolingSeaWaters.FirstOrDefault(t => t.Number == number),
+								CoolingWaters = StaticEntities.ShowEntities.CoolingWaters.FirstOrDefault(t => t.Number == number),
+								CylinderLubOils = StaticEntities.ShowEntities.CylinderLubOils.FirstOrDefault(t => t.Number == number),
+								ExhaustGases = StaticEntities.ShowEntities.ExhaustGases.FirstOrDefault(t => t.Number == number),
+								FOs = StaticEntities.ShowEntities.FOs.FirstOrDefault(t => t.Number == number),
+								FOSupplyUnits = StaticEntities.ShowEntities.FOSupplyUnits.FirstOrDefault(t => t.Number == number),
+								LubOilPurifyings = StaticEntities.ShowEntities.LubOilPurifyings.FirstOrDefault(t => t.Number == number),
+								LubOils = StaticEntities.ShowEntities.LubOils.FirstOrDefault(t => t.Number == number),
+								MainGeneratorSets = StaticEntities.ShowEntities.MainGeneratorSets.FirstOrDefault(t => t.Number == number),
+								MainSwitchboards = StaticEntities.ShowEntities.MainSwitchboards.FirstOrDefault(t => t.Number == number),
+								MERemoteControls = StaticEntities.ShowEntities.MERemoteControls.FirstOrDefault(t => t.Number == number),
+								Miscellaneouses = StaticEntities.ShowEntities.Miscellaneouses.FirstOrDefault(t => t.Number == number),
+								ScavengeAirs = StaticEntities.ShowEntities.ScavengeAirs.FirstOrDefault(t => t.Number == number),
+								ShaftClutchs = StaticEntities.ShowEntities.ShaftClutchs.FirstOrDefault(t => t.Number == number),
+							};
+							while (true)
+							{
+								if (ClientWebSocket.State == WebSocketState.Open)
+								{
+									try
+									{
+										await ClientWebSocket.SendAsync(Encoding.UTF8.GetBytes(rtInfos.ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
+									}
+									catch (Exception ex)
+									{
+										_logger.LogError(ex, "实时数据通过ws发送云端失败。");
+									}
+								}
+								await Task.Delay(10 * 1000);
+							}
+						}
+						catch (Exception ex)
+						{
+							_logger.LogError(ex, "实时数据上云初始化数据失败。");
+						}
 
-                        #endregion 实时数据通过ws上传云端
-                    }, CancellationToken.None);
-                }
-                else
-                {
-                    Log.Information("WebSocket连接失败。");
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+						#endregion 实时数据通过ws上传云端
+					}, CancellationToken.None);
+				}
+				else
+				{
+					Log.Information("WebSocket连接失败。");
+				}
+			}
+			catch (Exception)
+			{
+				throw;
+			}
 
-            //初始化eca及相关功能
-            InitECA();
+			//初始化eca及相关功能
+			InitECA();
 
-            // 打开中央处理单元掉线监测
-            Task.Factory.StartNew(async () =>
-            {
-                while (true)
-                {
-                    if (StaticEntities.StaticEntities.MonitoredDevices.Any(t => t.Number == number))
-                    {
-                        Devices.MonitoredDevice mds = StaticEntities.StaticEntities.MonitoredDevices.FirstOrDefault(t => t.Number == number);
-                        if (mds.Devices.Count > 0)
-                        {
-                            try
-                            {
-                                var dtUtc = mds.Devices.MaxBy(t => t.Value).Value;
+			// 打开中央处理单元掉线监测
+			Task.Factory.StartNew(async () =>
+			{
+				while (true)
+				{
+					if (StaticEntities.StaticEntities.MonitoredDevices.Any(t => t.Number == number))
+					{
+						Devices.MonitoredDevice mds = StaticEntities.StaticEntities.MonitoredDevices.FirstOrDefault(t => t.Number == number);
+						if (mds.Devices.Count > 0)
+						{
+							try
+							{
+								var dtUtc = mds.Devices.MaxBy(t => t.Value).Value;
 
-                                if (dtUtc.AddSeconds(30) < DateTime.UtcNow)
-                                {
-                                    DateTime CurDt = DateTime.Now;
+								if (dtUtc.AddSeconds(30) < DateTime.UtcNow)
+								{
+									DateTime CurDt = DateTime.Now;
 
-                                    var logContents = new List<LogBook>();
-                                    var logBook = new LogBook();
-                                    LogInfo logInfo = new LogInfo();
-                                    logInfo.SerialNumber = number;
-                                    logBook.time = logInfo.RecordTime = CurDt.ToString("yyyy-MM-dd HH:mm:ss");
-                                    logBook.content = logInfo.Content = $"中央处理单元信息丢失。";
-                                    logBook.type = logInfo.LogType = "error";
-                                    logInfo.Creater = "auto";
+									var logContents = new List<LogBook>();
+									var logBook = new LogBook();
+									LogInfo logInfo = new LogInfo();
+									logInfo.SerialNumber = number;
+									logBook.time = logInfo.RecordTime = CurDt.ToString("yyyy-MM-dd HH:mm:ss");
+									logBook.content = logInfo.Content = $"中央处理单元信息丢失。";
+									logBook.type = logInfo.LogType = "error";
+									logInfo.Creater = "auto";
 
-                                    var logContentsEn = new List<LogBook>();
-                                    var logBookEn = new LogBook();
-                                    LogInfo logInfoEn = new LogInfo();
-                                    logInfoEn.SerialNumber = number;
-                                    logBookEn.time = logInfoEn.RecordTime = CurDt.ToString("yyyy-MM-dd HH:mm:ss");
-                                    logBookEn.content = logInfoEn.Content = $"Lost MCU Signal.";
-                                    logBookEn.type = logInfoEn.LogType = "error";
-                                    logInfoEn.Creater = "auto";
+									var logContentsEn = new List<LogBook>();
+									var logBookEn = new LogBook();
+									LogInfo logInfoEn = new LogInfo();
+									logInfoEn.SerialNumber = number;
+									logBookEn.time = logInfoEn.RecordTime = CurDt.ToString("yyyy-MM-dd HH:mm:ss");
+									logBookEn.content = logInfoEn.Content = $"Lost MCU Signal.";
+									logBookEn.type = logInfoEn.LogType = "error";
+									logInfoEn.Creater = "auto";
 
-                                    using var _channel = await _consulService.GetGrpcChannelAsync("base-srv");
-                                    var client = new Base.BaseClient(_channel);
-                                    var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = number });
-                                    shipId = deviceResponse.DeviceInfo.ShipId;
-                                    //await client.CreateLogAsync(logInfo);
-                                    await client.CreateLogAsync(logInfoEn);
-                                    logContents.Add(logBook);
-                                    logContentsEn.Add(logBookEn);
-                                    await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eems", content = logContents, shipId = shipId, level = "曹" }).ToJson() + "$warningInfoEn$" + (new { category = "eems", content = logContentsEn, shipId = shipId, level = "曹" }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
-                                }
-                            }
-                            catch (Exception)
-                            {
-                            }
-                        }
-                    }
-                    await Task.Delay(1000 * 30);
-                }
-            });
-            Log.Information("UDP启动");
-        }
+									using var _channel = await _consulService.GetGrpcChannelAsync("base-srv");
+									var client = new Base.BaseClient(_channel);
+									var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = number });
+									shipId = deviceResponse.DeviceInfo.ShipId;
+									//await client.CreateLogAsync(logInfo);
+									await client.CreateLogAsync(logInfoEn);
+									logContents.Add(logBook);
+									logContentsEn.Add(logBookEn);
+									await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eems", content = logContents, shipId = shipId, level = "曹" }).ToJson() + "$warningInfoEn$" + (new { category = "eems", content = logContentsEn, shipId = shipId, level = "曹" }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
+								}
+							}
+							catch (Exception)
+							{
+							}
+						}
+					}
+					await Task.Delay(1000 * 30);
+				}
+			});
+			Log.Information("UDP启动");
+		}
 
-        //初始化eca、js 启动eca预警任务
-        private void InitECA()
-        {
-            var number = _configuration["ShipInfo:SN"] ?? "SAD1";
-            try
-            {
-                JECA = File.ReadAllText("Geo/ECA.json").ToJObject();
-                TurfJs = File.ReadAllText("Geo/turfminjs");
-                JintEngine = new Engine().SetValue("log", new Action<object>(Console.WriteLine)).Execute(TurfJs);
-                JintEngine.Execute(@"
+		//初始化eca、js 启动eca预警任务
+		private void InitECA()
+		{
+			var number = _configuration["ShipInfo:SN"] ?? "NDY1274";
+			try
+			{
+				JECA = File.ReadAllText("Geo/ECA.json").ToJObject();
+				TurfJs = File.ReadAllText("Geo/turfminjs");
+				JintEngine = new Engine().SetValue("log", new Action<object>(Console.WriteLine)).Execute(TurfJs);
+				JintEngine.Execute(@"
                     function getECAInfo(point, geometry, geometryType, featureName) {
                         var turfGeometry;
                         var turfLine;
@@ -536,441 +536,441 @@ namespace hmt_energy_csharp.Services
                     }
                 ");
 
-                Task.Run(async () =>
-                {
-                    while (true)
-                    {
-                        await Task.Delay(1000 * 60);
+				Task.Run(async () =>
+				{
+					while (true)
+					{
+						await Task.Delay(1000 * 60);
 
-                        var vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == number);
-                        if (vessel == null)
-                            continue;
+						var vessel = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == number);
+						if (vessel == null)
+							continue;
 
-                        if (shipId > 0)
-                            try
-                            {
-                                JsValue fResult = null;
-                                if (JECA.ContainsKey("features"))
-                                {
-                                    foreach (var feature in JECA["features"].Children())
-                                    {
-                                        if (((JObject)feature).ContainsKey("geometry") && ((JObject)feature).ContainsKey("properties"))
-                                        {
-                                            if (((JObject)feature["geometry"]).ContainsKey("coordinates") && ((JObject)feature["geometry"]).ContainsKey("type") && ((JObject)feature["properties"]).ContainsKey("name"))
-                                            {
-                                                var featurename = feature["properties"]["name"].ToString();
-                                                var geometrytype = feature["geometry"]["type"].ToString();
-                                                var coordinates = feature["geometry"]["coordinates"];
+						if (shipId > 0)
+							try
+							{
+								JsValue fResult = null;
+								if (JECA.ContainsKey("features"))
+								{
+									foreach (var feature in JECA["features"].Children())
+									{
+										if (((JObject)feature).ContainsKey("geometry") && ((JObject)feature).ContainsKey("properties"))
+										{
+											if (((JObject)feature["geometry"]).ContainsKey("coordinates") && ((JObject)feature["geometry"]).ContainsKey("type") && ((JObject)feature["properties"]).ContainsKey("name"))
+											{
+												var featurename = feature["properties"]["name"].ToString();
+												var geometrytype = feature["geometry"]["type"].ToString();
+												var coordinates = feature["geometry"]["coordinates"];
 
-                                                double[] position = new double[2] { Convert.ToDouble(vessel.Longitude), Convert.ToDouble(vessel.Latitude) };
-                                                //测试用
-                                                //double[] position = new double[2] { Convert.ToDouble(122.101395130671), Convert.ToDouble(32.1146169209686) };
-                                                var result = JintEngine.Invoke("getECAInfo", position, coordinates, geometrytype, featurename);
-                                                if (result.Get("distance").ToString() != "undefined")
-                                                {
-                                                    if (Convert.ToDouble(result.Get("distance")) == 0)
-                                                    {
-                                                        fResult = result;
-                                                        break;
-                                                    }
-                                                    else
-                                                    {
-                                                        if (fResult == null)
-                                                        {
-                                                            fResult = result;
-                                                        }
-                                                        else
-                                                        {
-                                                            if (Convert.ToDouble(fResult.Get("distance")) > Convert.ToDouble(result.Get("distance")))
-                                                                fResult = result;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+												double[] position = new double[2] { Convert.ToDouble(vessel.Longitude), Convert.ToDouble(vessel.Latitude) };
+												//测试用
+												//double[] position = new double[2] { Convert.ToDouble(122.101395130671), Convert.ToDouble(32.1146169209686) };
+												var result = JintEngine.Invoke("getECAInfo", position, coordinates, geometrytype, featurename);
+												if (result.Get("distance").ToString() != "undefined")
+												{
+													if (Convert.ToDouble(result.Get("distance")) == 0)
+													{
+														fResult = result;
+														break;
+													}
+													else
+													{
+														if (fResult == null)
+														{
+															fResult = result;
+														}
+														else
+														{
+															if (Convert.ToDouble(fResult.Get("distance")) > Convert.ToDouble(result.Get("distance")))
+																fResult = result;
+														}
+													}
+												}
+											}
+										}
+									}
 
-                                    //通过ws发送eca信息
-                                    if (fResult != null && Convert.ToDouble(fResult.Get("distance")) < 20)
-                                        try
-                                        {
-                                            string strDt = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-                                            ResponseResult responseResult = new ResponseResult
-                                            {
-                                                LogContents = new List<LogBook> {new LogBook
-                                            {
-                                                time = strDt,
-                                                content = "距离" + fResult.Get("name") + "区域还剩" + fResult.Get("distance") + "海里"
-                                            } },
-                                                LogContentsEn = new List<LogBook> {new LogBook
-                                            {
-                                                time = strDt,
-                                                content = "There are still " + fResult.Get("distance") + " nautical miles left from Area " + fResult.Get("name")
-                                            } }
-                                            };
-                                            await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eca", content = responseResult.LogContents, shipId = shipId, level = "info" }).ToJson() + "$warningInfoEn$" + (new { category = "eca", content = responseResult.LogContentsEn, shipId = shipId, level = "info" }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
-                                            //测试用
-                                            //await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eca", content = responseResult.LogContents, shipId = 24, level = "info" }).ToJson() + "$warningInfoEn$" + (new { category = "eca", content = responseResult.LogContentsEn, shipId = 24, level = "info" }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            _logger.LogError(ex, "{Namespace}_{MethodName}", MethodBase.GetCurrentMethod()?.DeclaringType?.Namespace, MethodBase.GetCurrentMethod()?.Name);
-                                        }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "{Namespace}_{MethodName}", MethodBase.GetCurrentMethod()?.DeclaringType?.Namespace, MethodBase.GetCurrentMethod()?.Name);
-                            }
-                    }
-                }, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("初始化eca及相关js失败，系统关闭，请检查相关文件···");
-                _logger.LogError(ex, "初始化eca及相关js失败，系统关闭，请检查相关文件···");
-                throw;
-            }
-        }
+									//通过ws发送eca信息
+									if (fResult != null && Convert.ToDouble(fResult.Get("distance")) < 20)
+										try
+										{
+											string strDt = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+											ResponseResult responseResult = new ResponseResult
+											{
+												LogContents = new List<LogBook> {new LogBook
+											{
+												time = strDt,
+												content = "距离" + fResult.Get("name") + "区域还剩" + fResult.Get("distance") + "海里"
+											} },
+												LogContentsEn = new List<LogBook> {new LogBook
+											{
+												time = strDt,
+												content = "There are still " + fResult.Get("distance") + " nautical miles left from Area " + fResult.Get("name")
+											} }
+											};
+											await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eca", content = responseResult.LogContents, shipId = shipId, level = "info" }).ToJson() + "$warningInfoEn$" + (new { category = "eca", content = responseResult.LogContentsEn, shipId = shipId, level = "info" }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
+											//测试用
+											//await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eca", content = responseResult.LogContents, shipId = 24, level = "info" }).ToJson() + "$warningInfoEn$" + (new { category = "eca", content = responseResult.LogContentsEn, shipId = 24, level = "info" }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
+										}
+										catch (Exception ex)
+										{
+											_logger.LogError(ex, "{Namespace}_{MethodName}", MethodBase.GetCurrentMethod()?.DeclaringType?.Namespace, MethodBase.GetCurrentMethod()?.Name);
+										}
+								}
+							}
+							catch (Exception ex)
+							{
+								_logger.LogError(ex, "{Namespace}_{MethodName}", MethodBase.GetCurrentMethod()?.DeclaringType?.Namespace, MethodBase.GetCurrentMethod()?.Name);
+							}
+					}
+				}, CancellationToken.None);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("初始化eca及相关js失败，系统关闭，请检查相关文件···");
+				_logger.LogError(ex, "初始化eca及相关js失败，系统关闭，请检查相关文件···");
+				throw;
+			}
+		}
 
-        protected override async void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
-        {
-            Log.Information($"接收信息参数=>{endpoint.ToString()} {offset} {size}");
-            var receiveMsg = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Replace("\r", "").Replace("\n", "");
-            if (receiveMsg.IsNullOrWhiteSpace())
-                return;
+		protected override async void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
+		{
+			Log.Information($"接收信息参数=>{endpoint.ToString()} {offset} {size}");
+			var receiveMsg = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Replace("\r", "").Replace("\n", "");
+			if (receiveMsg.IsNullOrWhiteSpace())
+				return;
 
-            try
-            {
-                Log.Information($"{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} 接收实时数据=》{receiveMsg}");
-                var clientIp = ((IPEndPoint)endpoint).Address.ToString();
-                if (receiveMsg[0].Equals('|') && receiveMsg[receiveMsg.Length - 3].Equals('*'))
-                {
-                    Log.Information($"航行信息.");
-                    var datas = receiveMsg.Split(",");
-                    var number = datas[0].Trim('|');    //采集系统设备序列号
-                    var collectId = Convert.ToInt32(datas[1]);  //语句id
-                    var shipinfo = new BaseShipInfo();
+			try
+			{
+				Log.Information($"{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} 接收实时数据=》{receiveMsg}");
+				var clientIp = ((IPEndPoint)endpoint).Address.ToString();
+				if (receiveMsg[0].Equals('|') && receiveMsg[receiveMsg.Length - 3].Equals('*'))
+				{
+					Log.Information($"航行信息.");
+					var datas = receiveMsg.Split(",");
+					var number = datas[0].Trim('|');    //采集系统设备序列号
+					var collectId = Convert.ToInt32(datas[1]);  //语句id
+					var shipinfo = new BaseShipInfo();
 
-                    using (var _channel = await _consulService.GetGrpcChannelAsync("base-srv"))
-                    {
-                        try
-                        {
-                            var client = new Base.BaseClient(_channel);
-                            var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = number });
-                            shipId = deviceResponse.DeviceInfo.ShipId;
-                            var shipResponse = await client.GetShipByIdAsync(new IdRequest { Id = deviceResponse.DeviceInfo.ShipId });
-                            shipinfo.ShipType = shipResponse.ShipInfo.TypeName;
-                            shipinfo.DWT = shipResponse.ShipInfo.Dwt;
-                            shipinfo.GT = shipResponse.ShipInfo.Gt;
-                            shipinfo.Pitch = shipResponse.ShipInfo.Pitch;
+					using (var _channel = await _consulService.GetGrpcChannelAsync("base-srv"))
+					{
+						try
+						{
+							var client = new Base.BaseClient(_channel);
+							var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = number });
+							shipId = deviceResponse.DeviceInfo.ShipId;
+							var shipResponse = await client.GetShipByIdAsync(new IdRequest { Id = deviceResponse.DeviceInfo.ShipId });
+							shipinfo.ShipType = shipResponse.ShipInfo.TypeName;
+							shipinfo.DWT = shipResponse.ShipInfo.Dwt;
+							shipinfo.GT = shipResponse.ShipInfo.Gt;
+							shipinfo.Pitch = shipResponse.ShipInfo.Pitch;
 
-                            var responseCurrentFuelType = await client.GetShipFuelSwitchRecordListAsync(new ShipFuelSwitchRecordListReq { ShipId = shipId, PageInfo = new PageInfo { Pn = 1, Ps = 1 } });
-                            var cftList = responseCurrentFuelType.List;
-                            if (cftList.Count > 0)
-                                shipinfo.CurrentFuelType = cftList[0].PresentFuelType;
-                            else
-                                shipinfo.CurrentFuelType = "HFO";
-                        }
-                        catch (Exception ex)
-                        {
-                            shipinfo.CurrentFuelType = "HFO";
-                            Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
-                        }
-                        //shipinfo.CurrentFuelType = "HFO";
-                    }
+							var responseCurrentFuelType = await client.GetShipFuelSwitchRecordListAsync(new ShipFuelSwitchRecordListReq { ShipId = shipId, PageInfo = new PageInfo { Pn = 1, Ps = 1 } });
+							var cftList = responseCurrentFuelType.List;
+							if (cftList.Count > 0)
+								shipinfo.CurrentFuelType = cftList[0].PresentFuelType;
+							else
+								shipinfo.CurrentFuelType = "HFO";
+						}
+						catch (Exception ex)
+						{
+							shipinfo.CurrentFuelType = "HFO";
+							Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
+						}
+						//shipinfo.CurrentFuelType = "HFO";
+					}
 
-                    //测试用
-                    /*shipId = 24;
+					//测试用
+					/*shipId = 24;
                     shipinfo.ShipType = "bulk carrier/散货船";
                     shipinfo.DWT = 115599.6f;
                     shipinfo.GT = 10000;
                     shipinfo.Pitch = 9321.321;
                     shipinfo.CurrentFuelType = "HFO";*/
 
-                    var result = await _protocolDataService.DecodeAsync(number, receiveMsg, "|", "", shipinfo);
-                    if (result.IsSuccess)
-                    {
-                        SendAsync(endpoint, $"@{collectId};");
-                        Log.Information($"{collectId} 接收成功。");
-                    }
-                    else
-                    {
-                        SendAsync(endpoint, $"failure:{hmt_energy_csharpDomainErrorCodes.UdpInsertFailure}");
-                        Log.Error($"{collectId} 接收失败。");
-                    }
+					var result = await _protocolDataService.DecodeAsync(number, receiveMsg, "|", "", shipinfo);
+					if (result.IsSuccess)
+					{
+						SendAsync(endpoint, $"@{collectId};");
+						Log.Information($"{collectId} 接收成功。");
+					}
+					else
+					{
+						SendAsync(endpoint, $"failure:{hmt_energy_csharpDomainErrorCodes.UdpInsertFailure}");
+						Log.Error($"{collectId} 接收失败。");
+					}
 
-                    if (result.LogContents.Count > 0)
-                    {
-                        using (var _channel = await _consulService.GetGrpcChannelAsync("base-srv"))
-                        {
-                            var client = new Base.BaseClient(_channel);
-                            var level = "曹";
-                            foreach (var logEntity in result.LogContentsEn)
-                            {
-                                LogInfo logInfo = new LogInfo();
-                                logInfo.SerialNumber = number;
-                                logInfo.RecordTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                                logInfo.Content = logEntity.content;
-                                logInfo.LogType = logEntity.type;
-                                logInfo.Creater = "auto";
-                                await client.CreateLogAsync(logInfo);
+					if (result.LogContents.Count > 0)
+					{
+						using (var _channel = await _consulService.GetGrpcChannelAsync("base-srv"))
+						{
+							var client = new Base.BaseClient(_channel);
+							var level = "曹";
+							foreach (var logEntity in result.LogContentsEn)
+							{
+								LogInfo logInfo = new LogInfo();
+								logInfo.SerialNumber = number;
+								logInfo.RecordTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+								logInfo.Content = logEntity.content;
+								logInfo.LogType = logEntity.type;
+								logInfo.Creater = "auto";
+								await client.CreateLogAsync(logInfo);
 
-                                if (logEntity.type == "alert")
-                                    level = "呸";
-                            }
+								if (logEntity.type == "alert")
+									level = "呸";
+							}
 
-                            await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eems", content = result.LogContents, shipId = shipId, level = level }).ToJson() + "$warningInfoEn$" + (new { category = "eems", content = result.LogContentsEn, shipId = shipId, level = level }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
-                        }
-                    }
-                }
-                else if (receiveMsg[0].Equals('|') && receiveMsg[receiveMsg.Length - 4].Equals('*'))
-                {
-                    Log.Information($"状态信息.");
-                    var number = string.Empty;
-                    var infoType = string.Empty;
-                    try
-                    {
-                        var datas = receiveMsg.Split(",");
-                        number = datas[0].Trim('|');    //采集系统设备序列号
-                        infoType = datas[1];
-                        if (infoType.Split('@').Length > 1)
-                            infoType = infoType.Split('@')[0];
-                        if (infoType.IndexOf("ERR") == 0)
-                        {
-                            if (receiveMsg.Split("@").Length > 1)
-                            {
-                                var strDevices = receiveMsg.Split("@")[1];
-                                strDevices = strDevices.Substring(0, strDevices.Length - 4);
-                                var lstDevice = strDevices.Split('$');
-                                if (Convert.ToInt32(infoType.Replace("ERR", "")) != lstDevice.Length)
-                                {
-                                    return;
-                                }
+							await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eems", content = result.LogContents, shipId = shipId, level = level }).ToJson() + "$warningInfoEn$" + (new { category = "eems", content = result.LogContentsEn, shipId = shipId, level = level }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
+						}
+					}
+				}
+				else if (receiveMsg[0].Equals('|') && receiveMsg[receiveMsg.Length - 4].Equals('*'))
+				{
+					Log.Information($"状态信息.");
+					var number = string.Empty;
+					var infoType = string.Empty;
+					try
+					{
+						var datas = receiveMsg.Split(",");
+						number = datas[0].Trim('|');    //采集系统设备序列号
+						infoType = datas[1];
+						if (infoType.Split('@').Length > 1)
+							infoType = infoType.Split('@')[0];
+						if (infoType.IndexOf("ERR") == 0)
+						{
+							if (receiveMsg.Split("@").Length > 1)
+							{
+								var strDevices = receiveMsg.Split("@")[1];
+								strDevices = strDevices.Substring(0, strDevices.Length - 4);
+								var lstDevice = strDevices.Split('$');
+								if (Convert.ToInt32(infoType.Replace("ERR", "")) != lstDevice.Length)
+								{
+									return;
+								}
 
-                                using var _channel = await _consulService.GetGrpcChannelAsync("base-srv");
-                                var client = new Base.BaseClient(_channel);
-                                var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = number });
-                                shipId = deviceResponse.DeviceInfo.ShipId;
-                                var logContents = new List<LogBook>();
-                                var logContentsEn = new List<LogBook>();
+								using var _channel = await _consulService.GetGrpcChannelAsync("base-srv");
+								var client = new Base.BaseClient(_channel);
+								var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = number });
+								shipId = deviceResponse.DeviceInfo.ShipId;
+								var logContents = new List<LogBook>();
+								var logContentsEn = new List<LogBook>();
 
-                                foreach (var device in lstDevice)
-                                {
-                                    try
-                                    {
-                                        if (device.Split(',').Length > 1)
-                                        {
-                                            var code = device.Split(',')[0];
-                                            var status = device.Split(',')[1];
-                                            if (status == "0")
-                                            {
-                                                if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == number && t.Code == code && t.IsDevice == 1))
-                                                {
-                                                    var dto = StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == number && t.Code == code && t.IsDevice == 1);
-                                                    var curDt = DateTime.Now;
+								foreach (var device in lstDevice)
+								{
+									try
+									{
+										if (device.Split(',').Length > 1)
+										{
+											var code = device.Split(',')[0];
+											var status = device.Split(',')[1];
+											if (status == "0")
+											{
+												if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == number && t.Code == code && t.IsDevice == 1))
+												{
+													var dto = StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == number && t.Code == code && t.IsDevice == 1);
+													var curDt = DateTime.Now;
 
-                                                    var logBook = new LogBook();
-                                                    LogInfo logInfo = new LogInfo();
-                                                    logInfo.SerialNumber = number;
-                                                    logBook.time = logInfo.RecordTime = curDt.ToString("yyyy-MM-dd HH:mm:ss");
-                                                    logBook.content = logInfo.Content = $"{dto.Name}位置信息丢失。";
-                                                    logBook.type = logInfo.LogType = "error";
-                                                    logInfo.Creater = "auto";
+													var logBook = new LogBook();
+													LogInfo logInfo = new LogInfo();
+													logInfo.SerialNumber = number;
+													logBook.time = logInfo.RecordTime = curDt.ToString("yyyy-MM-dd HH:mm:ss");
+													logBook.content = logInfo.Content = $"{dto.Name}位置信息丢失。";
+													logBook.type = logInfo.LogType = "error";
+													logInfo.Creater = "auto";
 
-                                                    //await client.CreateLogAsync(logInfo);
-                                                    logContents.Add(logBook);
+													//await client.CreateLogAsync(logInfo);
+													logContents.Add(logBook);
 
-                                                    var logBookEn = new LogBook();
-                                                    LogInfo logInfoEn = new LogInfo();
-                                                    logInfoEn.SerialNumber = number;
-                                                    logBookEn.time = logInfoEn.RecordTime = curDt.ToString("yyyy-MM-dd HH:mm:ss");
-                                                    logBookEn.content = logInfoEn.Content = $"Lost {dto.Name} signal.";
-                                                    logBookEn.type = logInfoEn.LogType = "error";
-                                                    logInfoEn.Creater = "auto";
+													var logBookEn = new LogBook();
+													LogInfo logInfoEn = new LogInfo();
+													logInfoEn.SerialNumber = number;
+													logBookEn.time = logInfoEn.RecordTime = curDt.ToString("yyyy-MM-dd HH:mm:ss");
+													logBookEn.content = logInfoEn.Content = $"Lost {dto.Name} signal.";
+													logBookEn.type = logInfoEn.LogType = "error";
+													logInfoEn.Creater = "auto";
 
-                                                    await client.CreateLogAsync(logInfoEn);
-                                                    logContentsEn.Add(logBookEn);
-                                                }
-                                            }
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Log.Error($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} 状态信息日志信息错误.");
-                                        continue;
-                                    }
-                                }
-                                await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eems", content = logContents, shipId = shipId, level = "曹" }).ToJson() + "$warningInfoEn$" + (new { category = "eems", content = logContentsEn, shipId = shipId, level = "曹" }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
-                    }
-                    finally
-                    {
-                        SendAsync(endpoint, $"!{number};");
-                        Log.Information($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} {number}成功.");
-                    }
-                }
-                else
-                {
-                    // Echo the message back to the sender
-                    SendAsync(endpoint, $"failure:{hmt_energy_csharpDomainErrorCodes.UdpDataInvalid}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex.Message);
-                SendAsync(endpoint, $"failure::{hmt_energy_csharpDomainErrorCodes.UdpProcessError}");
-            }
-        }
+													await client.CreateLogAsync(logInfoEn);
+													logContentsEn.Add(logBookEn);
+												}
+											}
+										}
+									}
+									catch (Exception ex)
+									{
+										Log.Error($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} 状态信息日志信息错误.");
+										continue;
+									}
+								}
+								await _clientWS.SendAsync(Encoding.UTF8.GetBytes((new { category = "eems", content = logContents, shipId = shipId, level = "曹" }).ToJson() + "$warningInfoEn$" + (new { category = "eems", content = logContentsEn, shipId = shipId, level = "曹" }).ToJson()), WebSocketMessageType.Text, true, CancellationToken.None);
+							}
+						}
+					}
+					catch (Exception ex)
+					{
+						Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
+					}
+					finally
+					{
+						SendAsync(endpoint, $"!{number};");
+						Log.Information($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} {number}成功.");
+					}
+				}
+				else
+				{
+					// Echo the message back to the sender
+					SendAsync(endpoint, $"failure:{hmt_energy_csharpDomainErrorCodes.UdpDataInvalid}");
+				}
+			}
+			catch (Exception ex)
+			{
+				Log.Error(ex.Message);
+				SendAsync(endpoint, $"failure::{hmt_energy_csharpDomainErrorCodes.UdpProcessError}");
+			}
+		}
 
-        protected override void OnSent(EndPoint endpoint, long sent)
-        {
-            // Continue receive datagrams
-            ReceiveAsync();
-        }
+		protected override void OnSent(EndPoint endpoint, long sent)
+		{
+			// Continue receive datagrams
+			ReceiveAsync();
+		}
 
-        protected override void OnError(SocketError error)
-        {
-            _logger.LogError($"Echo UDP server caught an error with code {error}");
-        }
+		protected override void OnError(SocketError error)
+		{
+			_logger.LogError($"Echo UDP server caught an error with code {error}");
+		}
 
-        protected override void OnStopping()
-        {
-            if (_clientWS != null && _clientWS.State == WebSocketState.Open)
-            {
-                _clientWS.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
-                _clientWS.Abort();
-                _clientWS.Dispose();
-            }
+		protected override void OnStopping()
+		{
+			if (_clientWS != null && _clientWS.State == WebSocketState.Open)
+			{
+				_clientWS.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+				_clientWS.Abort();
+				_clientWS.Dispose();
+			}
 
-            if (ClientWebSocket != null && ClientWebSocket.State == WebSocketState.Open)
-            {
-                ClientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
-                ClientWebSocket.Abort();
-                ClientWebSocket.Dispose();
-            }
-        }
-    }
+			if (ClientWebSocket != null && ClientWebSocket.State == WebSocketState.Open)
+			{
+				ClientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+				ClientWebSocket.Abort();
+				ClientWebSocket.Dispose();
+			}
+		}
+	}
 
-    public class TabletUdpClient : UdpClient
-    {
-        public bool _stop;
-        public string number { get; set; }
+	public class TabletUdpClient : UdpClient
+	{
+		public bool _stop;
+		public string number { get; set; }
 
-        public TabletUdpClient(string address, int port, string number) : base(address, port)
-        {
-            this.number = number;
-        }
+		public TabletUdpClient(string address, int port, string number) : base(address, port)
+		{
+			this.number = number;
+		}
 
-        public void DisconnectAndStop()
-        {
-            _stop = true;
-            Disconnect();
-            while (IsConnected)
-                Thread.Yield();
-        }
+		public void DisconnectAndStop()
+		{
+			_stop = true;
+			Disconnect();
+			while (IsConnected)
+				Thread.Yield();
+		}
 
-        protected override void OnConnected()
-        {
-            Console.WriteLine($"Echo UDP client connected a new session with Id {Id}");
+		protected override void OnConnected()
+		{
+			Console.WriteLine($"Echo UDP client connected a new session with Id {Id}");
 
-            // Start receive datagrams
-            ReceiveAsync();
-        }
+			// Start receive datagrams
+			ReceiveAsync();
+		}
 
-        protected override void OnDisconnected()
-        {
-            Console.WriteLine($"Echo UDP client disconnected a session with Id {Id}");
+		protected override void OnDisconnected()
+		{
+			Console.WriteLine($"Echo UDP client disconnected a session with Id {Id}");
 
-            // Wait for a while...
-            Thread.Sleep(1000);
+			// Wait for a while...
+			Thread.Sleep(1000);
 
-            // Try to connect again
-            if (!_stop)
-                Connect();
-        }
+			// Try to connect again
+			if (!_stop)
+				Connect();
+		}
 
-        private static List<int> msgFromTabletIndex = new List<int>();
-        private static List<AssistantDecisionDto> adsFromTablet = new List<AssistantDecisionDto>();
+		private static List<int> msgFromTabletIndex = new List<int>();
+		private static List<AssistantDecisionDto> adsFromTablet = new List<AssistantDecisionDto>();
 
-        protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
-        {
-            //Console.WriteLine("Incoming: " + Encoding.UTF8.GetString(buffer, (int)offset, (int)size));
+		protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
+		{
+			//Console.WriteLine("Incoming: " + Encoding.UTF8.GetString(buffer, (int)offset, (int)size));
 
-            // Continue receive datagrams
+			// Continue receive datagrams
 
-            var strMsg = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Replace("\r", "").Replace("\n", "");
-            if (!string.IsNullOrWhiteSpace(strMsg))
-            {
-                if (strMsg == "$$$helloserver$$$")
-                    Console.WriteLine("tablet hand shakes.");
-                else if (strMsg.StartsWith("{") && strMsg.EndsWith("}"))
-                {
-                    try
-                    {
-                        var jsonMsg = strMsg.ToJObject();
-                        if (jsonMsg.ContainsKey("index") && jsonMsg.ContainsKey("total"))
-                        {
-                            if (msgFromTabletIndex.Contains(Convert.ToInt32(jsonMsg["index"])))
-                            {
-                                var tempAssistantDecisionDtos = adsFromTablet;
+			var strMsg = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Replace("\r", "").Replace("\n", "");
+			if (!string.IsNullOrWhiteSpace(strMsg))
+			{
+				if (strMsg == "$$$helloserver$$$")
+					Console.WriteLine("tablet hand shakes.");
+				else if (strMsg.StartsWith("{") && strMsg.EndsWith("}"))
+				{
+					try
+					{
+						var jsonMsg = strMsg.ToJObject();
+						if (jsonMsg.ContainsKey("index") && jsonMsg.ContainsKey("total"))
+						{
+							if (msgFromTabletIndex.Contains(Convert.ToInt32(jsonMsg["index"])))
+							{
+								var tempAssistantDecisionDtos = adsFromTablet;
 
-                                var curAssistantDecisionDtos = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number).AssistantDecisionDtos;
+								var curAssistantDecisionDtos = StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number).AssistantDecisionDtos;
 
-                                foreach (var dto in tempAssistantDecisionDtos)
-                                {
-                                    if (curAssistantDecisionDtos.Any(t => t.Key == dto.Key))
-                                    {
-                                        var index = curAssistantDecisionDtos.IndexOf(curAssistantDecisionDtos.FirstOrDefault(t => t.Key == dto.Key));
-                                        curAssistantDecisionDtos[index].Content = dto.Content;
-                                        curAssistantDecisionDtos[index].State = dto.State;
-                                    }
-                                    else
-                                    {
-                                        curAssistantDecisionDtos.Add(new AssistantDecisionDto
-                                        {
-                                            Key = dto.Key,
-                                            Content = dto.Content,
-                                            State = dto.State,
-                                            Number = number
-                                        });
-                                    }
-                                }
-                                StaticEntities.ShowEntities.AssistantDecisions[StaticEntities.ShowEntities.AssistantDecisions.IndexOf(StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number))].AssistantDecisionDtos = StaticEntities.StaticEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number).AssistantDecisionDtos = curAssistantDecisionDtos;
+								foreach (var dto in tempAssistantDecisionDtos)
+								{
+									if (curAssistantDecisionDtos.Any(t => t.Key == dto.Key))
+									{
+										var index = curAssistantDecisionDtos.IndexOf(curAssistantDecisionDtos.FirstOrDefault(t => t.Key == dto.Key));
+										curAssistantDecisionDtos[index].Content = dto.Content;
+										curAssistantDecisionDtos[index].State = dto.State;
+									}
+									else
+									{
+										curAssistantDecisionDtos.Add(new AssistantDecisionDto
+										{
+											Key = dto.Key,
+											Content = dto.Content,
+											State = dto.State,
+											Number = number
+										});
+									}
+								}
+								StaticEntities.ShowEntities.AssistantDecisions[StaticEntities.ShowEntities.AssistantDecisions.IndexOf(StaticEntities.ShowEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number))].AssistantDecisionDtos = StaticEntities.StaticEntities.AssistantDecisions.FirstOrDefault(t => t.Number == number).AssistantDecisionDtos = curAssistantDecisionDtos;
 
-                                msgFromTabletIndex.Clear();
-                                adsFromTablet.Clear();
-                            }
-                            else
-                            {
-                                msgFromTabletIndex.Add(Convert.ToInt32(jsonMsg["index"]));
-                            }
-                            adsFromTablet.AddRange(jsonMsg["list"].ToString().ToList<AssistantDecisionDto>());
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
-                    }
-                }
-            }
+								msgFromTabletIndex.Clear();
+								adsFromTablet.Clear();
+							}
+							else
+							{
+								msgFromTabletIndex.Add(Convert.ToInt32(jsonMsg["index"]));
+							}
+							adsFromTablet.AddRange(jsonMsg["list"].ToString().ToList<AssistantDecisionDto>());
+						}
+					}
+					catch (Exception ex)
+					{
+						Log.Error(ex, MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name);
+					}
+				}
+			}
 
-            ReceiveAsync();
-        }
+			ReceiveAsync();
+		}
 
-        protected override void OnError(SocketError error)
-        {
-            Console.WriteLine($"Echo UDP client caught an error with code {error}");
+		protected override void OnError(SocketError error)
+		{
+			Console.WriteLine($"Echo UDP client caught an error with code {error}");
 
-            if (!IsConnected)
-            {
-                Connect();
-            }
-        }
-    }
+			if (!IsConnected)
+			{
+				Connect();
+			}
+		}
+	}
 }
