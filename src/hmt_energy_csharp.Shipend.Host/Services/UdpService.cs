@@ -34,6 +34,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NetCoreServer;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using Serilog.Context;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -493,8 +494,7 @@ namespace hmt_energy_csharp.Services
 							{
 							}
 						}
-					}
-					await Task.Delay(1000 * 30);
+                    }
 				}
 			});
 			Log.Information("UDP启动");

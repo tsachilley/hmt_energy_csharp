@@ -2329,7 +2329,7 @@ namespace hmt_energy_csharp.VesselInfos
 	                                        AND tv.""ReceiveDatetime"" = tt.""ReceiveDatetime""
 	                                        AND tv.SN = '{number}'
 	                                        AND tv.""ReceiveDatetime"" >= TO_TIMESTAMP( '{dateFrom.ToString("yyyy-MM-dd")}', 'YYYY-MM-DD' )
-	                                        AND tv.""ReceiveDatetime"" < TO_TIMESTAMP( '{dateFrom.ToString("yyyy-MM-dd")}', 'YYYY-MM-DD' )
+	                                        AND tv.""ReceiveDatetime"" < TO_TIMESTAMP( '{dateTo.ToString("yyyy-MM-dd")}', 'YYYY-MM-DD' )
 	                                        AND tv.""GroundSpeed"" > 0.5
 	                                        AND tt.""Power"" > 0.5
 	                                        AND tt.""Rpm"" > 0.5");
@@ -2340,7 +2340,13 @@ namespace hmt_energy_csharp.VesselInfos
                     //基本信息定义
                     var runtime = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["RunTime"])); //航行时间 单位:小时
                     var distance = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["DistanceGrd"])); //航行距离 单位:海里
-                    distance = distance == 0 ? Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["DistanceWat"])) : distance;
+                    if (distance == 0)
+                    {
+                        distance = Convert.ToDouble(StringHelper.GetDataColumnValue(baseData.Rows[0]["DistanceWat"]));
+                        baseData.Columns["DistanceGrd"].ReadOnly = false;
+                        baseData.Rows[0]["DistanceGrd"] = distance;
+                        baseData.Columns["DistanceGrd"].ReadOnly = true;
+                    }
 
                     //燃料消耗率曲线
                     sbSql.AppendFormat(@$"SELECT
@@ -2851,23 +2857,23 @@ ORDER BY
                     var eRating = 0.0;
                     try
                     {
-                        var avgdgo = Convert.ToDouble(baseData.Rows[0]["AVGDGO"]);
-                        var avglfo = Convert.ToDouble(baseData.Rows[0]["AVGLFO"]);
-                        var avghfo = Convert.ToDouble(baseData.Rows[0]["AVGHFO"]);
-                        var avglpg_p = Convert.ToDouble(baseData.Rows[0]["AVGLPG_P"]);
-                        var avglpg_b = Convert.ToDouble(baseData.Rows[0]["AVGLPG_B"]);
-                        var avglng = Convert.ToDouble(baseData.Rows[0]["AVGLNG"]);
-                        var avgmethanol = Convert.ToDouble(baseData.Rows[0]["AVGMethanol"]);
-                        var avgethanol = Convert.ToDouble(baseData.Rows[0]["AVGEthanol"]);
+                        var avgdgo = Convert.ToDouble(baseData.Rows[0]["AVGDGO"] is DBNull ? 0 : baseData.Rows[0]["AVGDGO"]);
+                        var avglfo = Convert.ToDouble(baseData.Rows[0]["AVGLFO"] is DBNull ? 0 : baseData.Rows[0]["AVGLFO"]);
+                        var avghfo = Convert.ToDouble(baseData.Rows[0]["AVGHFO"] is DBNull ? 0 : baseData.Rows[0]["AVGHFO"]);
+                        var avglpg_p = Convert.ToDouble(baseData.Rows[0]["AVGLPG_P"] is DBNull ? 0 : baseData.Rows[0]["AVGLPG_P"]);
+                        var avglpg_b = Convert.ToDouble(baseData.Rows[0]["AVGLPG_B"] is DBNull ? 0 : baseData.Rows[0]["AVGLPG_B"]);
+                        var avglng = Convert.ToDouble(baseData.Rows[0]["AVGLNG"] is DBNull ? 0 : baseData.Rows[0]["AVGLNG"]);
+                        var avgmethanol = Convert.ToDouble(baseData.Rows[0]["AVGMethanol"] is DBNull ? 0 : baseData.Rows[0]["AVGMethanol"]);
+                        var avgethanol = Convert.ToDouble(baseData.Rows[0]["AVGEthanol"] is DBNull ? 0 : baseData.Rows[0]["AVGEthanol"]);
 
-                        var predgo = Convert.ToDouble(preData.Rows[0]["DGO"]);
-                        var prelfo = Convert.ToDouble(preData.Rows[0]["LFO"]);
-                        var prehfo = Convert.ToDouble(preData.Rows[0]["HFO"]);
-                        var prelpg_p = Convert.ToDouble(preData.Rows[0]["LPG_P"]);
-                        var prelpg_b = Convert.ToDouble(preData.Rows[0]["LPG_B"]);
-                        var prelng = Convert.ToDouble(preData.Rows[0]["LNG"]);
-                        var premethanol = Convert.ToDouble(preData.Rows[0]["Methanol"]);
-                        var preethanol = Convert.ToDouble(preData.Rows[0]["Ethanol"]);
+                        var predgo = Convert.ToDouble(preData.Rows[0]["DGO"] is DBNull ? 0 : preData.Rows[0]["DGO"]);
+                        var prelfo = Convert.ToDouble(preData.Rows[0]["LFO"] is DBNull ? 0 : preData.Rows[0]["LFO"]);
+                        var prehfo = Convert.ToDouble(preData.Rows[0]["HFO"] is DBNull ? 0 : preData.Rows[0]["HFO"]);
+                        var prelpg_p = Convert.ToDouble(preData.Rows[0]["LPG_P"] is DBNull ? 0 : preData.Rows[0]["LPG_P"]);
+                        var prelpg_b = Convert.ToDouble(preData.Rows[0]["LPG_B"] is DBNull ? 0 : preData.Rows[0]["LPG_B"]);
+                        var prelng = Convert.ToDouble(preData.Rows[0]["LNG"] is DBNull ? 0 : preData.Rows[0]["LNG"]);
+                        var premethanol = Convert.ToDouble(preData.Rows[0]["Methanol"] is DBNull ? 0 : preData.Rows[0]["Methanol"]);
+                        var preethanol = Convert.ToDouble(preData.Rows[0]["Ethanol"] is DBNull ? 0 : preData.Rows[0]["Ethanol"]);
 
                         eeoi = (DGOC * 3.206 + LFOC * 3.151 + HFOC * 3.114 + LPG_PC * 3 + LPG_BC * 3.03 + LNGC * 2.75 + MethanolC * 1.375 + EthanolC * 1.913) * 1000 / cargoCapacity / distance;
                         dgoTW = DGOC / dwt / distance;
@@ -2893,7 +2899,7 @@ ORDER BY
                     else if (eRating == 0)
                         eRatingStr = $"--";
                     else
-                        eRatingStr = lang == "en_US" ? "Bad" : "差";
+                        eRatingStr = lang == "en_US" ? "Bad" : "较差";
 
                     var criteriaDto = new CriteriaDto();
                     if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == number && t.IsDevice == 0 && t.Code == "CriteriaDGO"))

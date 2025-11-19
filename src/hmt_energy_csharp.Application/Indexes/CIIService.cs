@@ -270,7 +270,8 @@ namespace hmt_energy_csharp.Indexes
                 #region 计算CII实际值
 
                 CO2Emission = await CalcCEmission(parameters);
-                var CIIValue = CO2Emission * 1000000d;
+                //原公式为var CIIValue = CO2Emission * 1000000d
+                var CIIValue = CO2Emission * 1000d;
                 switch (shipType)
                 {
                     case "1":// "bulk carrier":

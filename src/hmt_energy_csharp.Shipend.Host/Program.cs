@@ -10,11 +10,11 @@ using System;
 using System.Text;
 
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Information)
-    .MinimumLevel.Override("Volo.Abp", LogEventLevel.Information)
-    .MinimumLevel.Override("hmt_energy_csharp", LogEventLevel.Information)
+    .MinimumLevel.Warning()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+    .MinimumLevel.Override("Volo.Abp", LogEventLevel.Warning)
+    .MinimumLevel.Override("hmt_energy_csharp", LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .WriteTo.Async(c => c.File(new CompactJsonFormatter(), $"Logs/logs.txt", rollingInterval: RollingInterval.Day, rollOnFileSizeLimit: true, fileSizeLimitBytes: 100 * 1024 * 1024, encoding: Encoding.UTF8, retainedFileCountLimit: 100))
     .WriteTo.Async(c => c.Console())

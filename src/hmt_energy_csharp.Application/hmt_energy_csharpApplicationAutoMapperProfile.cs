@@ -73,6 +73,7 @@ public class hmt_energy_csharpApplicationAutoMapperProfile : Profile
         CreateMap<LiquidLevel, LiquidLevelDto>();
         CreateMap<Shaft, ShaftDto>();
         CreateMap<SternSealing, SternSealingDto>();
+        CreateMap<SupplyUnit, SupplyUnitDto>();
         CreateMap<PowerUnit, PowerUnitDto>();
 
         CreateMap<ConfigDto, Config>();
