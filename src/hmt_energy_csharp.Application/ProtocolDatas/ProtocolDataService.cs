@@ -254,6 +254,12 @@ namespace hmt_energy_csharp.ProtocolDatas
                                         sentenceDto.category = "pfec";
                                         StaticEntities.StaticEntities.MonitoredDevices[monitoredDevicesIndex].Devices["pfec"] = DateTime.UtcNow;
                                         break;
+                                    case "HRM":
+                                        var hrmEntity = new ICHRM(sentenceDto.data);
+                                        StaticEntities.StaticEntities.Vessels[indexVessel].X = hrmEntity.RollAngle;
+                                        sentenceDto.category = "ichrm";
+                                        StaticEntities.StaticEntities.MonitoredDevices[monitoredDevicesIndex].Devices["ichrm"] = DateTime.UtcNow;
+                                        break;
 
                                     case "ABK":
                                     case "ABM":
@@ -294,7 +300,7 @@ namespace hmt_energy_csharp.ProtocolDatas
                                     case "MWD":
                                         var mwdEntity = new VdrMwd(sentenceDto.data);
                                         StaticEntities.StaticEntities.Vessels[indexVessel].WindDirection = mwdEntity.tdirection;
-                                        StaticEntities.StaticEntities.Vessels[indexVessel].WindSpeed = mwdEntity.knspeed;
+                                        StaticEntities.StaticEntities.Vessels[indexVessel].WindSpeed = mwdEntity.speed;
                                         sentenceDto.category = "mwd";
                                         StaticEntities.StaticEntities.MonitoredDevices[monitoredDevicesIndex].Devices["mwd"] = DateTime.UtcNow;
                                         break;
