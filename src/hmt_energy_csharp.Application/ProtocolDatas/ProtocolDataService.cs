@@ -1,4 +1,4 @@
-﻿using hmt_energy_csharp.Devices;
+using hmt_energy_csharp.Devices;
 using hmt_energy_csharp.Dtos;
 using hmt_energy_csharp.Energy.Batteries;
 using hmt_energy_csharp.Energy.Configs;
@@ -1041,7 +1041,7 @@ namespace hmt_energy_csharp.ProtocolDatas
             //流量计合计数据
             foreach (var flowmeter in flowmeters)
             {
-                #region Emarat
+                /*#region Emarat
                 if (!lstPu.Any(t => t.DeviceType == flowmeter.DeviceType))
                     lstPu.Add(new PowerUnitDto { Number = number, ReceiveDatetime = vessel.ReceiveDatetime, DeviceType = flowmeter.DeviceType });
                 var pu = lstPu[lstPu.IndexOf(lstPu.FirstOrDefault(t => t.DeviceType == flowmeter.DeviceType))];
@@ -1065,7 +1065,7 @@ namespace hmt_energy_csharp.ProtocolDatas
                         break;
                 }
 
-                #endregion Emarat
+                #endregion Emarat*/
 
                 /*#region 迪拜
 
@@ -1627,24 +1627,37 @@ namespace hmt_energy_csharp.ProtocolDatas
                 }*/
             }
 
+            #region 长航处流量计合计数据 同上foreach功能一致 酌情选择
+            var DeviceTypes = new string[] { "me", "ae" };
+            foreach (var deviceType in DeviceTypes)
+            {
+                if (!lstPu.Any(t => t.DeviceType == deviceType))
+                    lstPu.Add(new PowerUnitDto { Number = number, ReceiveDatetime = vessel.ReceiveDatetime, DeviceType = deviceType });
+                var pu = lstPu[lstPu.IndexOf(lstPu.FirstOrDefault(t => t.DeviceType == deviceType))];
+                pu.DGO = flowmeters.Sum(t => t.DeviceType == deviceType ? (t.ConsAct ?? 0) : 0);
+                pu.DGOAccumulated = flowmeters.Sum(t => t.DeviceType == deviceType ? (t.ConsAcc ?? 0) : 0);
+            }
+            totalIndicator.DGO = flowmeters.Sum(t => t.DeviceType == "refuel" ? 0 : (t.ConsAct ?? 0));
+            totalIndicator.DGOAccumulated = flowmeters.Sum(t => t.DeviceType == "refuel" ? 0 : (t.ConsAcc ?? 0));
+            #endregion
+
             bsi.Pitch = (bsi.Pitch == 0 || bsi.Pitch is null) ? 5128.77 : bsi.Pitch;
             var tempSlip = 0m;
             CriteriaDto criteriaDto = new CriteriaDto();
             //轴功率仪合计数据
             foreach (var shaft in shafts)
             {
-                if (shaft.DeviceNo == "shaft_2")
-                    continue;
                 totalIndicator.Power = (totalIndicator.Power ?? 0) + shaft.Power;
                 totalIndicator.Torque = (totalIndicator.Torque ?? 0) + shaft.Torque;
                 totalIndicator.Thrust = (totalIndicator.Thrust ?? 0) + shaft.Thrust;
                 totalIndicator.Rpm = (totalIndicator.Rpm ?? 0) + shaft.RPM;
-
-                tempSlip += shaft.RPM == 0 ? 0 : ((decimal)vessel.WaterSpeed / (decimal)shaft.RPM / (decimal)bsi.Pitch * 1852 * 1000 / 60);
             }
+
+            tempSlip += totalIndicator.Rpm == 0 ? 0 : ((decimal)vessel.WaterSpeed / (decimal)totalIndicator.Rpm / (decimal)bsi.Pitch * 1852 * 1000 / 60);
             vessel.Slip = Math.Round((double)(1 - tempSlip) * 100, 2);
 
             var TotalHFO = totalIndicator.HFO ?? 0;
+            var TotalDGO = totalIndicator.DGO ?? 0;
             var TotalMethanol = totalIndicator.Methanol ?? 0;
             var TotalPower = totalIndicator.Power ?? 0;
             var MEFuel = lstPu.FirstOrDefault(t => t.DeviceType == "me", new());
@@ -1730,6 +1743,7 @@ namespace hmt_energy_csharp.ProtocolDatas
             if (StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].Today == DateTime.MinValue || vessel.ReceiveDatetime.ToString("yyyyMMdd").CompareTo(StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].Today.ToString("yyyyMMdd")) > 0)
             {
                 StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].HFOAcc = Convert.ToDouble(totalIndicator.HFOAccumulated);
+                StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].DGOAcc = Convert.ToDouble(totalIndicator.DGOAccumulated);
                 StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MethanolAcc = Convert.ToDouble(totalIndicator.MethanolAccumulated);
 
                 StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MEHFOAcc = Convert.ToDouble(MEFuel.HFOAccumulated);
@@ -1740,6 +1754,18 @@ namespace hmt_energy_csharp.ProtocolDatas
                 StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].BLRDGOAcc = Convert.ToDouble(BLRFuel.DGOAccumulated);
 
                 StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].Today = vessel.ReceiveDatetime;
+
+                foreach (var fm in flowmeters)
+                {
+                    if (fm.DeviceNo == "me_fuel_1" && fm.FuelType == "DGO")
+                        StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].ME1DGOAcc = Convert.ToDouble(fm.ConsAcc);
+                    else if (fm.DeviceNo == "me_fuel_2" && fm.FuelType == "DGO")
+                        StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].ME2DGOAcc = Convert.ToDouble(fm.ConsAcc);
+                    else if (fm.DeviceNo == "ae_fuel_1" && fm.FuelType == "DGO")
+                        StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AE1DGOAcc = Convert.ToDouble(fm.ConsAcc);
+                    else if (fm.DeviceNo == "ae_fuel_2" && fm.FuelType == "DGO")
+                        StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AE2DGOAcc = Convert.ToDouble(fm.ConsAcc);
+                }
             }
             //}
 
@@ -3535,6 +3561,181 @@ namespace hmt_energy_csharp.ProtocolDatas
                     }
                     break;
 
+                case "FOCTRANS":
+                    try
+                    {
+                        var ME1Flow = Convert.ToDecimal(sentArr[1]);
+                        var ME1Total = Convert.ToDecimal(sentArr[2]);
+                        var ME2Flow = Convert.ToDecimal(sentArr[3]);
+                        var ME2Total = Convert.ToDecimal(sentArr[4]);
+                        var AE1Flow = Convert.ToDecimal(sentArr[5]);
+                        var AE1Total = Convert.ToDecimal(sentArr[6]);
+                        var AE2Flow = Convert.ToDecimal(sentArr[7]);
+                        var AE2Total = Convert.ToDecimal(sentArr[8]);
+                        var RefuelFlow = Convert.ToDecimal(sentArr[9]);
+                        var RefuelTotal = Convert.ToDecimal(sentArr[10]);
+
+                        if (lstFm.Any(t => t.Number == number && t.DeviceNo == "me_fuel_1" && t.DeviceType == "me"))
+                        {
+                            var Fm = lstFm.First(t => t.Number == number && t.DeviceNo == "me_fuel_1" && t.DeviceType == "me");
+                            var index = lstFm.IndexOf(Fm);
+
+                            lstFm[index].ConsAct = ME1Flow;
+                            lstFm[index].ConsAcc = ME1Total;
+                            lstFm[index].FuelType = "DGO";
+
+                            lstFm[index].Number = number;
+                            lstFm[index].ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime;
+                            lstFm[index].DeviceType = "me";
+                            lstFm[index].DeviceNo = "me_fuel_1";
+                            lstFm[index].Uploaded = 0;
+                        }
+                        else
+                        {
+                            lstFm.Add(new FlowmeterDto
+                            {
+                                ConsAct = ME1Flow,
+                                ConsAcc = ME1Total,
+                                FuelType = "DGO",
+
+                                Number = number,
+                                ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime,
+                                DeviceType = "me",
+                                DeviceNo = "me_fuel_1",
+                                Uploaded = 0
+                            });
+                        }
+
+                        if (lstFm.Any(t => t.Number == number && t.DeviceNo == "me_fuel_2" && t.DeviceType == "me"))
+                        {
+                            var Fm = lstFm.First(t => t.Number == number && t.DeviceNo == "me_fuel_2" && t.DeviceType == "me");
+                            var index = lstFm.IndexOf(Fm);
+
+                            lstFm[index].ConsAct = ME2Flow;
+                            lstFm[index].ConsAcc = ME2Total;
+                            lstFm[index].FuelType = "DGO";
+
+                            lstFm[index].Number = number;
+                            lstFm[index].ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime;
+                            lstFm[index].DeviceType = "me";
+                            lstFm[index].DeviceNo = "me_fuel_2";
+                            lstFm[index].Uploaded = 0;
+                        }
+                        else
+                        {
+                            lstFm.Add(new FlowmeterDto
+                            {
+                                ConsAct = ME2Flow,
+                                ConsAcc = ME2Total,
+                                FuelType = "DGO",
+
+                                Number = number,
+                                ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime,
+                                DeviceType = "me",
+                                DeviceNo = "me_fuel_2",
+                                Uploaded = 0
+                            });
+                        }
+
+                        if (lstFm.Any(t => t.Number == number && t.DeviceNo == "ae_fuel_1" && t.DeviceType == "ae"))
+                        {
+                            var Fm = lstFm.First(t => t.Number == number && t.DeviceNo == "ae_fuel_1" && t.DeviceType == "ae");
+                            var index = lstFm.IndexOf(Fm);
+
+                            lstFm[index].ConsAct = AE1Flow;
+                            lstFm[index].ConsAcc = AE1Total;
+                            lstFm[index].FuelType = "DGO";
+
+                            lstFm[index].Number = number;
+                            lstFm[index].ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime;
+                            lstFm[index].DeviceType = "ae";
+                            lstFm[index].DeviceNo = "ae_fuel_1";
+                            lstFm[index].Uploaded = 0;
+                        }
+                        else
+                        {
+                            lstFm.Add(new FlowmeterDto
+                            {
+                                ConsAct = AE1Flow,
+                                ConsAcc = AE1Total,
+                                FuelType = "DGO",
+
+                                Number = number,
+                                ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime,
+                                DeviceType = "ae",
+                                DeviceNo = "ae_fuel_1",
+                                Uploaded = 0
+                            });
+                        }
+
+                        if (lstFm.Any(t => t.Number == number && t.DeviceNo == "ae_fuel_2" && t.DeviceType == "ae"))
+                        {
+                            var Fm = lstFm.First(t => t.Number == number && t.DeviceNo == "ae_fuel_2" && t.DeviceType == "ae");
+                            var index = lstFm.IndexOf(Fm);
+
+                            lstFm[index].ConsAct = AE2Flow;
+                            lstFm[index].ConsAcc = AE2Total;
+                            lstFm[index].FuelType = "DGO";
+
+                            lstFm[index].Number = number;
+                            lstFm[index].ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime;
+                            lstFm[index].DeviceType = "ae";
+                            lstFm[index].DeviceNo = "ae_fuel_2";
+                            lstFm[index].Uploaded = 0;
+                        }
+                        else
+                        {
+                            lstFm.Add(new FlowmeterDto
+                            {
+                                ConsAct = AE2Flow,
+                                ConsAcc = AE2Total,
+                                FuelType = "DGO",
+
+                                Number = number,
+                                ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime,
+                                DeviceType = "ae",
+                                DeviceNo = "ae_fuel_2",
+                                Uploaded = 0
+                            });
+                        }
+
+                        if (lstFm.Any(t => t.Number == number && t.DeviceNo == "refuel1" && t.DeviceType == "refuel"))
+                        {
+                            var Fm = lstFm.First(t => t.Number == number && t.DeviceNo == "refuel1" && t.DeviceType == "refuel");
+                            var index = lstFm.IndexOf(Fm);
+
+                            lstFm[index].ConsAct = RefuelFlow;
+                            lstFm[index].ConsAcc = RefuelTotal;
+                            lstFm[index].FuelType = "DGO";
+
+                            lstFm[index].Number = number;
+                            lstFm[index].ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime;
+                            lstFm[index].DeviceType = "refuel";
+                            lstFm[index].DeviceNo = "refuel1";
+                            lstFm[index].Uploaded = 0;
+                        }
+                        else
+                        {
+                            lstFm.Add(new FlowmeterDto
+                            {
+                                ConsAct = RefuelFlow,
+                                ConsAcc = RefuelTotal,
+                                FuelType = "DGO",
+
+                                Number = number,
+                                ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime,
+                                DeviceType = "refuel",
+                                DeviceNo = "refuel1",
+                                Uploaded = 0
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "流量计错误=>" + MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name + "_" + sentArr);
+                    }
+                    break;
+
                 case "SHAFT":
                     try
                     {
@@ -3583,6 +3784,52 @@ namespace hmt_energy_csharp.ProtocolDatas
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "ams轴功率错误=>" + MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name + "_" + sentArr);
+                    }
+                    break;
+
+                case "1ERBMT":
+                case "2ERBMT":
+                    try
+                    {
+                        var Torque = Convert.ToDecimal(sentArr[1]); //kNm
+                        var Thrust = Convert.ToDecimal(sentArr[2]); //kNm
+                        var RPM = Convert.ToDecimal(sentArr[3]); //rev/min
+                        var Power = Convert.ToDecimal(sentArr[4]); //kW
+
+                        if (lstSh.Any(t => t.Number == number && t.DeviceNo == strDevice))
+                        {
+                            var sh = lstSh.First(t => t.Number == number && t.DeviceNo == strDevice);
+                            var index = lstSh.IndexOf(sh);
+                            lstSh[index].Number = number;
+
+                            lstSh[index].Power = Power;
+                            lstSh[index].RPM = RPM;
+                            lstSh[index].Torque = Torque;
+                            lstSh[index].Thrust = Thrust;
+
+                            lstSh[index].ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime;
+                            lstSh[index].DeviceNo = strDevice;
+                            lstSh[index].Uploaded = 0;
+                        }
+                        else
+                        {
+                            lstSh.Add(new ShaftDto
+                            {
+                                Power = Power,
+                                RPM = RPM,
+                                Torque = Torque,
+                                Thrust = Thrust,
+
+                                Number = number,
+                                ReceiveDatetime = StaticEntities.StaticEntities.Vessels[indexVessel].ReceiveDatetime,
+                                DeviceNo = strDevice,
+                                Uploaded = 0
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "轴功率错误=>" + MethodBase.GetCurrentMethod().DeclaringType.Namespace + "_" + MethodBase.GetCurrentMethod().Name + "_" + sentArr);
                     }
                     break;
 

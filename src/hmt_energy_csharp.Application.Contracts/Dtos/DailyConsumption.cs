@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace hmt_energy_csharp.Dtos
 {
@@ -20,6 +20,11 @@ namespace hmt_energy_csharp.Dtos
         public double MEDGOAcc { get; set; } = 0;
         public double AEDGOAcc { get; set; } = 0;
         public double BLRDGOAcc { get; set; } = 0;
+
+        public double ME1DGOAcc { get; set; } = 0;
+        public double ME2DGOAcc { get; set; } = 0;
+        public double AE1DGOAcc { get; set; } = 0;
+        public double AE2DGOAcc { get; set; } = 0;
 
         public DateTime Today { get; set; } = DateTime.MinValue;
     }

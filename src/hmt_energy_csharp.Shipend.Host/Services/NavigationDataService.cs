@@ -6,6 +6,7 @@ using hmt_energy_csharp.Energy.Flowmeters;
 using hmt_energy_csharp.Energy.Shafts;
 using hmt_energy_csharp.Protos;
 using hmt_energy_csharp.VesselInfos;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
@@ -22,12 +23,14 @@ public class NavigationDataService : NavigationData.NavigationDataBase
     private readonly ILogger<NavigationDataService> _logger;
     private readonly IVesselInfoService _vesselInfoService;
     private readonly IConsulService _consulService;
+    private readonly IConfiguration _configuration;
 
-    public NavigationDataService(ILogger<NavigationDataService> logger, IVesselInfoService vesselInfoService, IConsulService consulService)
+    public NavigationDataService(ILogger<NavigationDataService> logger, IVesselInfoService vesselInfoService, IConsulService consulService, IConfiguration configuration)
     {
         _logger = logger;
         _vesselInfoService = vesselInfoService;
         _consulService = consulService;
+        _configuration = configuration;
     }
 
     public override async Task<NavigationDataRealTimeSingleResponse> NavigationDataRealTimeSingle(NavigationDataRealTimeSingleRequest request, ServerCallContext context)
@@ -565,95 +568,13 @@ public class NavigationDataService : NavigationData.NavigationDataBase
                     };
                     break;
 
-                case "ee":
                 default:
-                    var vesselEntity = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == request.Number);
-                    foreach (var prop in vesselEntity.GetType().GetProperties())
+                    if (request.Type == "eeCHC") //长航处
                     {
-                        if (prop.PropertyType == typeof(double) ||
-                            prop.PropertyType == typeof(float) ||
-                            prop.PropertyType == typeof(decimal) ||
-                            prop.PropertyType == typeof(double?) ||
-                            prop.PropertyType == typeof(float?) ||
-                            prop.PropertyType == typeof(decimal?))
-                            prop.SetValue(vesselEntity, Math.Round(Convert.ToDouble(prop.GetValue(vesselEntity)), 4));
-                    }
-                    result = vesselEntity;
-                    var tempResult = result.ToJson().ToJObject();
-                    var fsDtos = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == request.Number).FlowmeterDtos;
-                    var fsDtosClear = new List<FlowmeterDto> {
-                            new FlowmeterDto { DeviceNo = "mefuel1", ConsAcc=0, ConsAct=0 },
-                            new FlowmeterDto { DeviceNo = "mefuel2", ConsAcc=0, ConsAct=0 },
-                            new FlowmeterDto { DeviceNo = "memethanol", ConsAcc=0, ConsAct=0 }
-                        };
+                        var vesselEntity = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == request.Number);
 
-                    /*国能长江01
-                    foreach (var dto in fsDtos)
-                    {
-                        if (!dto.DeviceNo.Contains("in") && !dto.DeviceNo.Contains("out"))
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("_", "")))].ConsAct = dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("_", "")))].ConsAcc = dto.ConsAcc;
-                        }
-                        else if (dto.DeviceNo.Contains("in"))
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("in", "").Replace("_", "")))].ConsAct += dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("in", "").Replace("_", "")))].ConsAcc += dto.ConsAcc;
-                        }
-                        else if (dto.DeviceNo.Contains("out"))
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("out", "").Replace("_", "")))].ConsAct -= dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("out", "").Replace("_", "")))].ConsAcc -= dto.ConsAcc;
-                        }
-                    }*/
-
-                    //me_fuel_in_1 主机 me_fuel_out_1 锅炉1 me_fuel_in_2 辅机进 me_fuel_in_2 辅机出 me_methanol 锅炉2
-                    foreach (var dto in fsDtos)
-                    {
-                        /* dubai glamour
-                         * if (dto.DeviceNo == "me_fuel_out_1" || dto.DeviceNo == "me_methanol")
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAct += dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAcc += dto.ConsAcc;
-                        }
-                        else if (dto.DeviceNo == "me_fuel_in_2")
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct += dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc += dto.ConsAcc;
-                        }
-                        else if (dto.DeviceNo == "me_fuel_out_2")
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct -= dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc -= dto.ConsAcc;
-                        }
-                        else if (dto.DeviceNo == "me_fuel_in_1")
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAct = dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAcc = dto.ConsAcc;
-                        }*/
-                        if (dto.DeviceNo == "blr_fuel")
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAct = dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAcc = dto.ConsAcc;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].FuelType = dto.FuelType;
-                        }
-                        else if (dto.DeviceNo == "ae_fuel")
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct = dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc = dto.ConsAcc;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].FuelType = dto.FuelType;
-                        }
-                        else if (dto.DeviceNo == "me_fuel")
-                        {
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAct = dto.ConsAct;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAcc = dto.ConsAcc;
-                            fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].FuelType = dto.FuelType;
-                        }
-                    }
-
-                    foreach (var dto in fsDtosClear)
-                    {
-                        foreach (var prop in dto.GetType().GetProperties())
+                        // 所有值类型为数值的属性保留四位小数
+                        foreach (var prop in vesselEntity.GetType().GetProperties())
                         {
                             if (prop.PropertyType == typeof(double) ||
                                 prop.PropertyType == typeof(float) ||
@@ -661,211 +582,536 @@ public class NavigationDataService : NavigationData.NavigationDataBase
                                 prop.PropertyType == typeof(double?) ||
                                 prop.PropertyType == typeof(float?) ||
                                 prop.PropertyType == typeof(decimal?))
-                                prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                                prop.SetValue(vesselEntity, Math.Round(Convert.ToDouble(prop.GetValue(vesselEntity)), 4));
                         }
+
+                        // 船舶吃水特殊处理
+                        vesselEntity.BowDraft = 0;
+                        vesselEntity.PortDraft = 0;
+                        vesselEntity.StarBoardDraft = 0;
+                        vesselEntity.AsternDraft = 0;
+                        vesselEntity.Draft = 0;
+                        vesselEntity.Trim = 0;
+                        vesselEntity.Heel = 0;
+                        try
+                        {
+                            vesselEntity.BowDraft = Convert.ToDouble(_configuration["ShipInfo:Draft"]);
+                            vesselEntity.PortDraft = Convert.ToDouble(_configuration["ShipInfo:Draft"]);
+                            vesselEntity.StarBoardDraft = Convert.ToDouble(_configuration["ShipInfo:Draft"]);
+                            vesselEntity.AsternDraft = Convert.ToDouble(_configuration["ShipInfo:Draft"]);
+                            vesselEntity.Draft = Convert.ToDouble(_configuration["ShipInfo:Draft"]);
+                        }
+                        catch { }
+
+                        result = vesselEntity;
+
+                        var tempResult = result.ToJson().ToJObject();
+                        // 流量计数据
+                        var fsDtos = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == request.Number).FlowmeterDtos;
+                        foreach (var dto in fsDtos)
+                        {
+                            foreach (var prop in dto.GetType().GetProperties())
+                            {
+                                try
+                                {
+                                    if ((prop.PropertyType == typeof(double) ||
+                                        prop.PropertyType == typeof(float) ||
+                                        prop.PropertyType == typeof(decimal) ||
+                                        prop.PropertyType == typeof(double?) ||
+                                        prop.PropertyType == typeof(float?) ||
+                                        prop.PropertyType == typeof(decimal?)) && prop.GetValue(dto) != null)
+                                        prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine("转换值错误：" + prop.GetValue(dto));
+                                    Debug.WriteLine("转换值错误：" + prop.GetValue(dto));
+                                    _logger.LogError("转换值错误：" + prop.GetValue(dto), ex);
+                                    throw;
+                                }
+                            }
+                        }
+                        var fs = new JProperty("Flowmeters", JArray.FromObject(fsDtos));
+
+                        tempResult.Add(fs);
+                        // 轴数据
+                        var ssDtos = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == request.Number).ShaftDtos;
+                        foreach (var dto in ssDtos)
+                        {
+                            foreach (var prop in dto.GetType().GetProperties())
+                            {
+                                try
+                                {
+                                    if ((prop.PropertyType == typeof(double) ||
+                                        prop.PropertyType == typeof(float) ||
+                                        prop.PropertyType == typeof(decimal) ||
+                                        prop.PropertyType == typeof(double?) ||
+                                        prop.PropertyType == typeof(float?) ||
+                                        prop.PropertyType == typeof(decimal?)) && prop.GetValue(dto) != null)
+                                        prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine("转换值错误：" + prop.GetValue(dto));
+                                    Debug.WriteLine("转换值错误：" + prop.GetValue(dto));
+                                    _logger.LogError("转换值错误：" + prop.GetValue(dto), ex);
+                                    throw;
+                                }
+                            }
+                        }
+                        var ss = new JProperty("Shafts", JArray.FromObject(ssDtos));
+
+                        tempResult.Add(ss);
+
+                        var ECStatus = "";
+                        var EEStatus = "";
+                        var criteriaDto = new CriteriaDto();
+                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaDGO"))
+                        {
+                            criteriaDto.DGO = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaDGO").HighLimit;
+                        }
+                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower"))
+                        {
+                            criteriaDto.Power = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower").HighLimit;
+                        }
+                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed"))
+                        {
+                            criteriaDto.Speed = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed").HighLimit;
+                        }
+                        if (Convert.ToDouble(vesselEntity.SFOC) * Convert.ToDouble(vesselEntity.FCPerNm) != 0)
+                        {
+                            var ecValue = (vesselEntity.SFOC / (criteriaDto.DGO / criteriaDto.Power) + vesselEntity.FCPerNm / (criteriaDto.DGO / criteriaDto.Speed)) / 2;
+                            if (ecValue > 0.99 && ecValue <= 1.09)
+                                ECStatus = request.Language == "en_US" ? "Normal" : "正常";
+                            else if (ecValue > 0.94 && ecValue <= 0.99)
+                                ECStatus = (request.Language == "en_US" ? "Good,Fuel saving:" : "良好，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
+                            else if (ecValue <= 0.94)
+                                ECStatus = (request.Language == "en_US" ? "Excellent,Fuel saving:" : "极佳，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
+                            else
+                                ECStatus = request.Language == "en_US" ? "Bad" : "差";
+                        }
+                        if (Convert.ToDouble(vesselEntity.RtCII) != 0)
+                        {
+                            var eeValue = vesselEntity.RtCII / ((criteriaDto.DGO * 3.206d) * 1000d / (10000d * 18d));
+                            if (eeValue > 0.95 && eeValue <= 1.05)
+                                EEStatus = request.Language == "en_US" ? "Normal" : "正常";
+                            else if (eeValue <= 0.95)
+                                EEStatus = request.Language == "en_US" ? "Good" : "良好";
+                            else
+                                EEStatus = request.Language == "en_US" ? "Bad" : "差";
+                        }
+
+                        var DGOC = 0m;
+                        var DGOCPre = 0m;
+
+                        var dDGOAcc = 0d;
+
+                        var dME1DGOAcc = 0d;
+                        var dME2DGOAcc = 0d;
+                        var dAE1DGOAcc = 0d;
+                        var dAE2DGOAcc = 0d;
+
+                        try
+                        {
+                            var totalIndicator = StaticEntities.ShowEntities.TotalIndicators.FirstOrDefault(t => t.Number == request.Number);
+                            var powerUnits = StaticEntities.ShowEntities.PowerUnits.FirstOrDefault(t => t.Number == request.Number).PowerUnitDtos;
+                            var me1Fuel = fsDtos.FirstOrDefault(t => t.DeviceType == "me_fuel_1", new());
+                            var me2Fuel = fsDtos.FirstOrDefault(t => t.DeviceType == "me_fuel_2", new());
+                            var ae1Fuel = fsDtos.FirstOrDefault(t => t.DeviceType == "ae_fuel_1", new());
+                            var ae2Fuel = fsDtos.FirstOrDefault(t => t.DeviceType == "ae_fuel_2", new());
+                            var prediction = StaticEntities.ShowEntities.Predictions.FirstOrDefault(t => t.Number == request.Number);
+                            var shipinfo = new BaseShipInfo();
+                            var cargoWeight = 0d;
+
+                            var CEmission = Math.Round((totalIndicator.DGO ?? 0) * 3.206m, 2);
+                            tempResult.Add(new JProperty("CEmission", CEmission.ToString()));
+
+                            using (var _channel = await _consulService.GetGrpcChannelAsync("base-srv"))
+                            {
+                                var client = new Base.BaseClient(_channel);
+                                var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = request.Number });
+                                var shipResponse = await client.GetShipByIdAsync(new IdRequest { Id = deviceResponse.DeviceInfo.ShipId });
+                                var voyageResponse = await client.GetLatestVoyageInfoByDeviceNumberAsync(new DeviceRequest { Number = request.Number });
+                                shipinfo.ShipType = shipResponse.ShipInfo.TypeName;
+                                shipinfo.DWT = shipResponse.ShipInfo.Dwt;
+                                shipinfo.GT = shipResponse.ShipInfo.Gt;
+                                cargoWeight = voyageResponse.Boatload;
+                            }
+                            var tonnage = 0f;
+                            if (shipinfo.ShipType.Contains("LNG carrier") ||
+                                shipinfo.ShipType.Contains("bulk carrier") ||
+                                shipinfo.ShipType.Contains("combination carrier") ||
+                                shipinfo.ShipType.Contains("container ship") ||
+                                shipinfo.ShipType.Contains("gas carrier") ||
+                                shipinfo.ShipType.Contains("general cargo ship") ||
+                                shipinfo.ShipType.Contains("refrigerated cargo carrier") ||
+                                shipinfo.ShipType.Contains("tanker"))
+                                tonnage = shipinfo.DWT ?? 1;
+                            else
+                                tonnage = shipinfo.GT ?? 1;
+                            var PreRtCII = Math.Round(Convert.ToDouble((prediction.DGO ?? 0) * 3.206m) * 1000 / Convert.ToDouble(tonnage * vesselEntity.GroundSpeed), 2);
+                            var PreDGO = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.DGO) / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
+                            var PreTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.DGO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
+                            var PreCO2 = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.DGO) * 3.206 / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
+                            var PreCEmission = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.DGO) * 3.206, 2);
+                            var DGOTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.DGO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
+                            var CO2TW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.DGO * 3.206m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
+                            var EEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.DGO * 3.206m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
+                            var PreEEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.DGO * 3.206m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
+                            var CO2PerNm = Math.Round((totalIndicator.DGO ?? 0) * 3.206m, 2);
+                            tempResult.Add(new JProperty("PreRtCII", PreRtCII));
+                            tempResult.Add(new JProperty("PreHFO", PreDGO));
+                            tempResult.Add(new JProperty("PreTW", PreTW));
+                            tempResult.Add(new JProperty("PreCO2", PreCO2));
+                            tempResult.Add(new JProperty("PreCEmission", PreCEmission));
+
+                            tempResult.Add(new JProperty("HFOTW", DGOTW));
+                            tempResult.Add(new JProperty("CO2TW", CO2TW));
+                            tempResult.Add(new JProperty("EEOI", EEOI));
+                            tempResult.Add(new JProperty("PreEEOI", PreEEOI));
+                            tempResult.Add(new JProperty("CO2PerNm", CO2PerNm));
+
+                            var eeRating = prediction.DGO / totalIndicator.DGO;
+                            if (eeRating > 0.95m && eeRating <= 1.05m)
+                                EEStatus = request.Language == "en_US" ? "Normal" : "正常";
+                            else if (eeRating <= 0.99m)
+                                EEStatus = request.Language == "en_US" ? "Good" : "良好";
+                            else
+                                EEStatus = request.Language == "en_US" ? "Bad" : "差";
+
+                            DGOC = Math.Round(totalIndicator.DGO ?? 0, 2);
+                            DGOCPre = Math.Round(prediction.DGO ?? 0, 2);
+
+                            var dailyConsumptionIndex = StaticEntities.StaticEntities.DailyConsumptions.IndexOf(StaticEntities.StaticEntities.DailyConsumptions.FirstOrDefault(t => t.Number == request.Number));
+                            dDGOAcc = Convert.ToDouble(totalIndicator.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].DGOAcc;
+
+                            dME1DGOAcc = Convert.ToDouble(me1Fuel.ConsAcc) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].ME1DGOAcc;
+                            dME2DGOAcc = Convert.ToDouble(me2Fuel.ConsAcc) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].ME2DGOAcc;
+                            dAE1DGOAcc = Convert.ToDouble(ae1Fuel.ConsAcc) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AE1DGOAcc;
+                            dAE2DGOAcc = Convert.ToDouble(ae2Fuel.ConsAcc) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AE2DGOAcc;
+                        }
+                        catch (Exception) { }
+                        tempResult.Add(new JProperty("ECStatus", ECStatus));
+                        tempResult.Add(new JProperty("EEStatus", EEStatus));
+
+                        tempResult.Add(new JProperty("HFOC", DGOC));
+                        tempResult.Add(new JProperty("HFOCPre", DGOCPre));
+
+                        tempResult.Add(new JProperty("dHFOAcc", dDGOAcc));
+
+                        tempResult.Add(new JProperty("dMEDGOAcc", dME1DGOAcc));
+                        tempResult.Add(new JProperty("dMEHFOAcc", dME2DGOAcc));
+                        tempResult.Add(new JProperty("dAEDGOAcc", dAE1DGOAcc));
+                        tempResult.Add(new JProperty("dAEHFOAcc", dAE2DGOAcc));
+
+                        //tempResult.Add(new JProperty("dBLRHFOAcc", dBLRHFOAcc));
+                        //tempResult.Add(new JProperty("dBLRDGOAcc", dBLRDGOAcc));
+
+                        result = tempResult;
+                        break;
                     }
-                    var fs = new JProperty("Flowmeters", JArray.FromObject(fsDtosClear));
-                    tempResult.Add(fs);
-                    var ssDtos = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == request.Number).ShaftDtos;
-                    var ssDtosClear = new List<ShaftDto> {
+                    else
+                    {
+                        var vesselEntity = StaticEntities.ShowEntities.Vessels.FirstOrDefault(t => t.SN == request.Number);
+                        foreach (var prop in vesselEntity.GetType().GetProperties())
+                        {
+                            if (prop.PropertyType == typeof(double) ||
+                                prop.PropertyType == typeof(float) ||
+                                prop.PropertyType == typeof(decimal) ||
+                                prop.PropertyType == typeof(double?) ||
+                                prop.PropertyType == typeof(float?) ||
+                                prop.PropertyType == typeof(decimal?))
+                                prop.SetValue(vesselEntity, Math.Round(Convert.ToDouble(prop.GetValue(vesselEntity)), 4));
+                        }
+                        result = vesselEntity;
+                        var tempResult = result.ToJson().ToJObject();
+                        var fsDtos = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == request.Number).FlowmeterDtos;
+                        var fsDtosClear = new List<FlowmeterDto> {
+                            new FlowmeterDto { DeviceNo = "mefuel1", ConsAcc=0, ConsAct=0 },
+                            new FlowmeterDto { DeviceNo = "mefuel2", ConsAcc=0, ConsAct=0 },
+                            new FlowmeterDto { DeviceNo = "memethanol", ConsAcc=0, ConsAct=0 }
+                        };
+
+                        /*国能长江01
+                        foreach (var dto in fsDtos)
+                        {
+                            if (!dto.DeviceNo.Contains("in") && !dto.DeviceNo.Contains("out"))
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("_", "")))].ConsAct = dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("_", "")))].ConsAcc = dto.ConsAcc;
+                            }
+                            else if (dto.DeviceNo.Contains("in"))
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("in", "").Replace("_", "")))].ConsAct += dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("in", "").Replace("_", "")))].ConsAcc += dto.ConsAcc;
+                            }
+                            else if (dto.DeviceNo.Contains("out"))
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("out", "").Replace("_", "")))].ConsAct -= dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo.Replace("out", "").Replace("_", "")))].ConsAcc -= dto.ConsAcc;
+                            }
+                        }*/
+
+                        //me_fuel_in_1 主机 me_fuel_out_1 锅炉1 me_fuel_in_2 辅机进 me_fuel_in_2 辅机出 me_methanol 锅炉2
+                        foreach (var dto in fsDtos)
+                        {
+                            /* dubai glamour
+                             * if (dto.DeviceNo == "me_fuel_out_1" || dto.DeviceNo == "me_methanol")
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAct += dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAcc += dto.ConsAcc;
+                            }
+                            else if (dto.DeviceNo == "me_fuel_in_2")
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct += dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc += dto.ConsAcc;
+                            }
+                            else if (dto.DeviceNo == "me_fuel_out_2")
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct -= dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc -= dto.ConsAcc;
+                            }
+                            else if (dto.DeviceNo == "me_fuel_in_1")
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAct = dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAcc = dto.ConsAcc;
+                            }*/
+                            if (dto.DeviceNo == "blr_fuel")
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAct = dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].ConsAcc = dto.ConsAcc;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "memethanol"))].FuelType = dto.FuelType;
+                            }
+                            else if (dto.DeviceNo == "ae_fuel")
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAct = dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].ConsAcc = dto.ConsAcc;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel2"))].FuelType = dto.FuelType;
+                            }
+                            else if (dto.DeviceNo == "me_fuel")
+                            {
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAct = dto.ConsAct;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAcc = dto.ConsAcc;
+                                fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].FuelType = dto.FuelType;
+                            }
+                        }
+
+                        foreach (var dto in fsDtosClear)
+                        {
+                            foreach (var prop in dto.GetType().GetProperties())
+                            {
+                                if (prop.PropertyType == typeof(double) ||
+                                    prop.PropertyType == typeof(float) ||
+                                    prop.PropertyType == typeof(decimal) ||
+                                    prop.PropertyType == typeof(double?) ||
+                                    prop.PropertyType == typeof(float?) ||
+                                    prop.PropertyType == typeof(decimal?))
+                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                            }
+                        }
+                        var fs = new JProperty("Flowmeters", JArray.FromObject(fsDtosClear));
+                        tempResult.Add(fs);
+                        var ssDtos = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == request.Number).ShaftDtos;
+                        var ssDtosClear = new List<ShaftDto> {
                             new ShaftDto { DeviceNo = "shaft_1", Power=0, RPM=0, Torque=0, Thrust=0 },
                             new ShaftDto { DeviceNo = "shaft_2", Power=0, RPM=0, Torque=0, Thrust=0 }
                         };
 
-                    foreach (var dto in ssDtos)
-                    {
-                        /* dubai glamour
-                         * ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Power = dto.Power;
-                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].RPM = dto.RPM;
-                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Torque = dto.Torque;
-                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Thrust = dto.Thrust;*/
-                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Power = dto.Power;
-                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].RPM = dto.RPM;
-                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Torque = dto.Torque;
-                        ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Thrust = dto.Thrust;
-                    }
-
-                    foreach (var dto in ssDtosClear)
-                    {
-                        foreach (var prop in dto.GetType().GetProperties())
+                        foreach (var dto in ssDtos)
                         {
-                            try
+                            /* dubai glamour
+                             * ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Power = dto.Power;
+                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].RPM = dto.RPM;
+                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Torque = dto.Torque;
+                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == dto.DeviceNo))].Thrust = dto.Thrust;*/
+                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Power = dto.Power;
+                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].RPM = dto.RPM;
+                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Torque = dto.Torque;
+                            ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Thrust = dto.Thrust;
+                        }
+
+                        foreach (var dto in ssDtosClear)
+                        {
+                            foreach (var prop in dto.GetType().GetProperties())
                             {
-                                if ((prop.PropertyType == typeof(double) ||
-                                                            prop.PropertyType == typeof(float) ||
-                                                            prop.PropertyType == typeof(decimal) ||
-                                                            prop.PropertyType == typeof(double?) ||
-                                                            prop.PropertyType == typeof(float?) ||
-                                                            prop.PropertyType == typeof(decimal?)) && prop.GetValue(dto) != null)
-                                    prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine("转换值错误：" + prop.GetValue(dto));
-                                Debug.WriteLine("转换值错误：" + prop.GetValue(dto));
-                                _logger.LogError("转换值错误：" + prop.GetValue(dto), ex);
-                                throw;
+                                try
+                                {
+                                    if ((prop.PropertyType == typeof(double) ||
+                                                                prop.PropertyType == typeof(float) ||
+                                                                prop.PropertyType == typeof(decimal) ||
+                                                                prop.PropertyType == typeof(double?) ||
+                                                                prop.PropertyType == typeof(float?) ||
+                                                                prop.PropertyType == typeof(decimal?)) && prop.GetValue(dto) != null)
+                                        prop.SetValue(dto, (decimal?)Math.Round(Convert.ToDouble(prop.GetValue(dto)), 4));
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine("转换值错误：" + prop.GetValue(dto));
+                                    Debug.WriteLine("转换值错误：" + prop.GetValue(dto));
+                                    _logger.LogError("转换值错误：" + prop.GetValue(dto), ex);
+                                    throw;
+                                }
                             }
                         }
-                    }
-                    var ss = new JProperty("Shafts", JArray.FromObject(ssDtosClear));
-                    tempResult.Add(ss);
+                        var ss = new JProperty("Shafts", JArray.FromObject(ssDtosClear));
+                        tempResult.Add(ss);
 
-                    var ECStatus = "";
-                    var EEStatus = "";
-                    var criteriaDto = new CriteriaDto();
-                    if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaHFO"))
-                    {
-                        criteriaDto.HFO = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaHFO").HighLimit;
-                    }
-                    if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaMethanol"))
-                    {
-                        criteriaDto.Methanol = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaMethanol").HighLimit;
-                    }
-                    if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower"))
-                    {
-                        criteriaDto.Power = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower").HighLimit;
-                    }
-                    if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed"))
-                    {
-                        criteriaDto.Speed = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed").HighLimit;
-                    }
-                    if (Convert.ToDouble(vesselEntity.SFOC) * Convert.ToDouble(vesselEntity.FCPerNm) != 0)
-                    {
-                        var ecValue = (vesselEntity.SFOC / (criteriaDto.HFO / criteriaDto.Power) + vesselEntity.FCPerNm / (criteriaDto.HFO / criteriaDto.Speed)) / 2;
-                        if (ecValue > 0.99 && ecValue <= 1.09)
-                            ECStatus = request.Language == "en_US" ? "Normal" : "正常";
-                        else if (ecValue > 0.94 && ecValue <= 0.99)
-                            ECStatus = (request.Language == "en_US" ? "Good,Fuel saving:" : "良好，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
-                        else if (ecValue <= 0.94)
-                            ECStatus = (request.Language == "en_US" ? "Excellent,Fuel saving:" : "极佳，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
-                        else
-                            ECStatus = request.Language == "en_US" ? "Bad" : "差";
-                    }
-                    if (Convert.ToDouble(vesselEntity.RtCII) != 0)
-                    {
-                        var eeValue = vesselEntity.RtCII / ((criteriaDto.HFO * 3.114d + criteriaDto.Methanol * 1.375d) * 1000d / (10000d * 18d));
-                        if (eeValue > 0.95 && eeValue <= 1.05)
-                            EEStatus = request.Language == "en_US" ? "Normal" : "正常";
-                        else if (eeValue <= 0.95)
-                            EEStatus = request.Language == "en_US" ? "Good" : "良好";
-                        else
-                            EEStatus = request.Language == "en_US" ? "Bad" : "差";
-                    }
-
-                    var HFOC = 0m;
-                    var HFOCPre = 0m;
-
-                    var dHFOAcc = 0d;
-                    var dMethanolAcc = 0d;
-
-                    var dMEHFOAcc = 0d;
-                    var dAEHFOAcc = 0d;
-                    var dBLRHFOAcc = 0d;
-                    var dMEDGOAcc = 0d;
-                    var dAEDGOAcc = 0d;
-                    var dBLRDGOAcc = 0d;
-
-                    try
-                    {
-                        var totalIndicator = StaticEntities.ShowEntities.TotalIndicators.FirstOrDefault(t => t.Number == request.Number);
-                        var powerUnits = StaticEntities.ShowEntities.PowerUnits.FirstOrDefault(t => t.Number == request.Number).PowerUnitDtos;
-                        var meFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "me", new());
-                        var aeFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "ae", new());
-                        var blrFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "blr", new());
-                        var prediction = StaticEntities.ShowEntities.Predictions.FirstOrDefault(t => t.Number == request.Number);
-                        var shipinfo = new BaseShipInfo();
-                        var cargoWeight = 0d;
-
-                        var CEmission = Math.Round((totalIndicator.HFO ?? 0) * 3.114m + (totalIndicator.Methanol ?? 0) * 1.375m + (totalIndicator.DGO ?? 0) * 3.206m, 2);
-                        tempResult.Add(new JProperty("CEmission", CEmission.ToString()));
-
-                        using (var _channel = await _consulService.GetGrpcChannelAsync("base-srv"))
+                        var ECStatus = "";
+                        var EEStatus = "";
+                        var criteriaDto = new CriteriaDto();
+                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaHFO"))
                         {
-                            var client = new Base.BaseClient(_channel);
-                            var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = request.Number });
-                            var shipResponse = await client.GetShipByIdAsync(new IdRequest { Id = deviceResponse.DeviceInfo.ShipId });
-                            var voyageResponse = await client.GetLatestVoyageInfoByDeviceNumberAsync(new DeviceRequest { Number = request.Number });
-                            shipinfo.ShipType = shipResponse.ShipInfo.TypeName;
-                            shipinfo.DWT = shipResponse.ShipInfo.Dwt;
-                            shipinfo.GT = shipResponse.ShipInfo.Gt;
-                            cargoWeight = voyageResponse.Boatload;
+                            criteriaDto.HFO = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaHFO").HighLimit;
                         }
-                        var tonnage = 0f;
-                        if (shipinfo.ShipType.Contains("LNG carrier") ||
-                            shipinfo.ShipType.Contains("bulk carrier") ||
-                            shipinfo.ShipType.Contains("combination carrier") ||
-                            shipinfo.ShipType.Contains("container ship") ||
-                            shipinfo.ShipType.Contains("gas carrier") ||
-                            shipinfo.ShipType.Contains("general cargo ship") ||
-                            shipinfo.ShipType.Contains("refrigerated cargo carrier") ||
-                            shipinfo.ShipType.Contains("tanker"))
-                            tonnage = shipinfo.DWT ?? 0;
-                        else
-                            tonnage = shipinfo.GT ?? 0;
-                        var PreRtCII = Math.Round(Convert.ToDouble((prediction.HFO ?? 0) * 3.114m + (prediction.DGO ?? 0) * 3.206m) * 1000 / Convert.ToDouble(tonnage * vesselEntity.GroundSpeed), 2);
-                        var PreHFO = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
-                        var PreTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
-                        var PreCO2 = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 3.114 / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
-                        var PreCEmission = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 3.114, 2);
-                        var HFOTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
-                        var CO2TW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO * 3.114m + totalIndicator.Methanol * 1.375m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
-                        var EEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO * 3.114m + totalIndicator.Methanol * 1.375m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
-                        var PreEEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO * 3.114m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
-                        var CO2PerNm = Math.Round((totalIndicator.HFO ?? 0) * 3.114m + (totalIndicator.Methanol ?? 0) * 1.375m, 2);
-                        tempResult.Add(new JProperty("PreRtCII", PreRtCII));
-                        tempResult.Add(new JProperty("PreHFO", PreHFO));
-                        tempResult.Add(new JProperty("PreTW", PreTW));
-                        tempResult.Add(new JProperty("PreCO2", PreCO2));
-                        tempResult.Add(new JProperty("PreCEmission", PreCEmission));
+                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaMethanol"))
+                        {
+                            criteriaDto.Methanol = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaMethanol").HighLimit;
+                        }
+                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower"))
+                        {
+                            criteriaDto.Power = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaPower").HighLimit;
+                        }
+                        if (StaticEntities.StaticEntities.Configs.Any(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed"))
+                        {
+                            criteriaDto.Speed = (double)StaticEntities.StaticEntities.Configs.FirstOrDefault(t => t.Number == request.Number && t.IsDevice == 0 && t.Code == "CriteriaSpeed").HighLimit;
+                        }
+                        if (Convert.ToDouble(vesselEntity.SFOC) * Convert.ToDouble(vesselEntity.FCPerNm) != 0)
+                        {
+                            var ecValue = (vesselEntity.SFOC / (criteriaDto.HFO / criteriaDto.Power) + vesselEntity.FCPerNm / (criteriaDto.HFO / criteriaDto.Speed)) / 2;
+                            if (ecValue > 0.99 && ecValue <= 1.09)
+                                ECStatus = request.Language == "en_US" ? "Normal" : "正常";
+                            else if (ecValue > 0.94 && ecValue <= 0.99)
+                                ECStatus = (request.Language == "en_US" ? "Good,Fuel saving:" : "良好，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
+                            else if (ecValue <= 0.94)
+                                ECStatus = (request.Language == "en_US" ? "Excellent,Fuel saving:" : "极佳，节油率为") + $"{Math.Round(100 - Convert.ToDouble(ecValue) * 100, 1)}%";
+                            else
+                                ECStatus = request.Language == "en_US" ? "Bad" : "差";
+                        }
+                        if (Convert.ToDouble(vesselEntity.RtCII) != 0)
+                        {
+                            var eeValue = vesselEntity.RtCII / ((criteriaDto.HFO * 3.114d + criteriaDto.Methanol * 1.375d) * 1000d / (10000d * 18d));
+                            if (eeValue > 0.95 && eeValue <= 1.05)
+                                EEStatus = request.Language == "en_US" ? "Normal" : "正常";
+                            else if (eeValue <= 0.95)
+                                EEStatus = request.Language == "en_US" ? "Good" : "良好";
+                            else
+                                EEStatus = request.Language == "en_US" ? "Bad" : "差";
+                        }
 
-                        tempResult.Add(new JProperty("HFOTW", HFOTW));
-                        tempResult.Add(new JProperty("CO2TW", CO2TW));
-                        tempResult.Add(new JProperty("EEOI", EEOI));
-                        tempResult.Add(new JProperty("PreEEOI", PreEEOI));
-                        tempResult.Add(new JProperty("CO2PerNm", CO2PerNm));
+                        var HFOC = 0m;
+                        var HFOCPre = 0m;
 
-                        var eeRating = prediction.HFO / totalIndicator.HFO;
-                        if (eeRating > 0.95m && eeRating <= 1.05m)
-                            EEStatus = request.Language == "en_US" ? "Normal" : "正常";
-                        else if (eeRating <= 0.99m)
-                            EEStatus = request.Language == "en_US" ? "Good" : "良好";
-                        else
-                            EEStatus = request.Language == "en_US" ? "Bad" : "差";
+                        var dHFOAcc = 0d;
+                        var dMethanolAcc = 0d;
 
-                        HFOC = Math.Round(totalIndicator.HFO ?? 0, 2);
-                        HFOCPre = Math.Round(prediction.HFO ?? 0, 2);
+                        var dMEHFOAcc = 0d;
+                        var dAEHFOAcc = 0d;
+                        var dBLRHFOAcc = 0d;
+                        var dMEDGOAcc = 0d;
+                        var dAEDGOAcc = 0d;
+                        var dBLRDGOAcc = 0d;
 
-                        var dailyConsumptionIndex = StaticEntities.StaticEntities.DailyConsumptions.IndexOf(StaticEntities.StaticEntities.DailyConsumptions.FirstOrDefault(t => t.Number == request.Number));
-                        dHFOAcc = Convert.ToDouble(totalIndicator.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].HFOAcc;
-                        dMethanolAcc = Convert.ToDouble(totalIndicator.MethanolAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MethanolAcc;
+                        try
+                        {
+                            var totalIndicator = StaticEntities.ShowEntities.TotalIndicators.FirstOrDefault(t => t.Number == request.Number);
+                            var powerUnits = StaticEntities.ShowEntities.PowerUnits.FirstOrDefault(t => t.Number == request.Number).PowerUnitDtos;
+                            var meFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "me", new());
+                            var aeFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "ae", new());
+                            var blrFuel = powerUnits.FirstOrDefault(t => t.DeviceType == "blr", new());
+                            var prediction = StaticEntities.ShowEntities.Predictions.FirstOrDefault(t => t.Number == request.Number);
+                            var shipinfo = new BaseShipInfo();
+                            var cargoWeight = 0d;
 
-                        dMEHFOAcc = Convert.ToDouble(meFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MEHFOAcc;
-                        dAEHFOAcc = Convert.ToDouble(aeFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AEHFOAcc;
-                        dBLRHFOAcc = Convert.ToDouble(blrFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].BLRHFOAcc;
-                        dMEDGOAcc = Convert.ToDouble(meFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MEDGOAcc;
-                        dAEDGOAcc = Convert.ToDouble(aeFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AEDGOAcc;
-                        dBLRDGOAcc = Convert.ToDouble(blrFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].BLRDGOAcc;
+                            var CEmission = Math.Round((totalIndicator.HFO ?? 0) * 3.114m + (totalIndicator.Methanol ?? 0) * 1.375m + (totalIndicator.DGO ?? 0) * 3.206m, 2);
+                            tempResult.Add(new JProperty("CEmission", CEmission.ToString()));
+
+                            using (var _channel = await _consulService.GetGrpcChannelAsync("base-srv"))
+                            {
+                                var client = new Base.BaseClient(_channel);
+                                var deviceResponse = await client.GetDeviceByNumberAsync(new DeviceRequest { Number = request.Number });
+                                var shipResponse = await client.GetShipByIdAsync(new IdRequest { Id = deviceResponse.DeviceInfo.ShipId });
+                                var voyageResponse = await client.GetLatestVoyageInfoByDeviceNumberAsync(new DeviceRequest { Number = request.Number });
+                                shipinfo.ShipType = shipResponse.ShipInfo.TypeName;
+                                shipinfo.DWT = shipResponse.ShipInfo.Dwt;
+                                shipinfo.GT = shipResponse.ShipInfo.Gt;
+                                cargoWeight = voyageResponse.Boatload;
+                            }
+                            var tonnage = 0f;
+                            if (shipinfo.ShipType.Contains("LNG carrier") ||
+                                shipinfo.ShipType.Contains("bulk carrier") ||
+                                shipinfo.ShipType.Contains("combination carrier") ||
+                                shipinfo.ShipType.Contains("container ship") ||
+                                shipinfo.ShipType.Contains("gas carrier") ||
+                                shipinfo.ShipType.Contains("general cargo ship") ||
+                                shipinfo.ShipType.Contains("refrigerated cargo carrier") ||
+                                shipinfo.ShipType.Contains("tanker"))
+                                tonnage = shipinfo.DWT ?? 0;
+                            else
+                                tonnage = shipinfo.GT ?? 0;
+                            var PreRtCII = Math.Round(Convert.ToDouble((prediction.HFO ?? 0) * 3.114m + (prediction.DGO ?? 0) * 3.206m) * 1000 / Convert.ToDouble(tonnage * vesselEntity.GroundSpeed), 2);
+                            var PreHFO = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
+                            var PreTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
+                            var PreCO2 = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 3.114 / Convert.ToDouble(vesselEntity.GroundSpeed), 2);
+                            var PreCEmission = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO) * 3.114, 2);
+                            var HFOTW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
+                            var CO2TW = Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO * 3.114m + totalIndicator.Methanol * 1.375m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / tonnage, 2);
+                            var EEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(totalIndicator.HFO * 3.114m + totalIndicator.Methanol * 1.375m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
+                            var PreEEOI = cargoWeight == 0 ? 0 : Math.Round((vesselEntity.GroundSpeed ?? 0) == 0 ? 0 : Convert.ToDouble(prediction.HFO * 3.114m) * 1000 / Convert.ToDouble(vesselEntity.GroundSpeed) / cargoWeight, 2);
+                            var CO2PerNm = Math.Round((totalIndicator.HFO ?? 0) * 3.114m + (totalIndicator.Methanol ?? 0) * 1.375m, 2);
+                            tempResult.Add(new JProperty("PreRtCII", PreRtCII));
+                            tempResult.Add(new JProperty("PreHFO", PreHFO));
+                            tempResult.Add(new JProperty("PreTW", PreTW));
+                            tempResult.Add(new JProperty("PreCO2", PreCO2));
+                            tempResult.Add(new JProperty("PreCEmission", PreCEmission));
+
+                            tempResult.Add(new JProperty("HFOTW", HFOTW));
+                            tempResult.Add(new JProperty("CO2TW", CO2TW));
+                            tempResult.Add(new JProperty("EEOI", EEOI));
+                            tempResult.Add(new JProperty("PreEEOI", PreEEOI));
+                            tempResult.Add(new JProperty("CO2PerNm", CO2PerNm));
+
+                            var eeRating = prediction.HFO / totalIndicator.HFO;
+                            if (eeRating > 0.95m && eeRating <= 1.05m)
+                                EEStatus = request.Language == "en_US" ? "Normal" : "正常";
+                            else if (eeRating <= 0.99m)
+                                EEStatus = request.Language == "en_US" ? "Good" : "良好";
+                            else
+                                EEStatus = request.Language == "en_US" ? "Bad" : "差";
+
+                            HFOC = Math.Round(totalIndicator.HFO ?? 0, 2);
+                            HFOCPre = Math.Round(prediction.HFO ?? 0, 2);
+
+                            var dailyConsumptionIndex = StaticEntities.StaticEntities.DailyConsumptions.IndexOf(StaticEntities.StaticEntities.DailyConsumptions.FirstOrDefault(t => t.Number == request.Number));
+                            dHFOAcc = Convert.ToDouble(totalIndicator.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].HFOAcc;
+                            dMethanolAcc = Convert.ToDouble(totalIndicator.MethanolAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MethanolAcc;
+
+                            dMEHFOAcc = Convert.ToDouble(meFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MEHFOAcc;
+                            dAEHFOAcc = Convert.ToDouble(aeFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AEHFOAcc;
+                            dBLRHFOAcc = Convert.ToDouble(blrFuel.HFOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].BLRHFOAcc;
+                            dMEDGOAcc = Convert.ToDouble(meFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].MEDGOAcc;
+                            dAEDGOAcc = Convert.ToDouble(aeFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].AEDGOAcc;
+                            dBLRDGOAcc = Convert.ToDouble(blrFuel.DGOAccumulated) - StaticEntities.StaticEntities.DailyConsumptions[dailyConsumptionIndex].BLRDGOAcc;
+                        }
+                        catch (Exception) { }
+                        tempResult.Add(new JProperty("ECStatus", ECStatus));
+                        tempResult.Add(new JProperty("EEStatus", EEStatus));
+
+                        tempResult.Add(new JProperty("HFOC", HFOC));
+                        tempResult.Add(new JProperty("HFOCPre", HFOCPre));
+
+                        tempResult.Add(new JProperty("dHFOAcc", dHFOAcc));
+                        tempResult.Add(new JProperty("dMethanolAcc", dMethanolAcc));
+
+                        tempResult.Add(new JProperty("dMEHFOAcc", dMEHFOAcc));
+                        tempResult.Add(new JProperty("dAEHFOAcc", dAEHFOAcc));
+                        tempResult.Add(new JProperty("dBLRHFOAcc", dBLRHFOAcc));
+                        tempResult.Add(new JProperty("dMEDGOAcc", dMEDGOAcc));
+                        tempResult.Add(new JProperty("dAEDGOAcc", dAEDGOAcc));
+                        tempResult.Add(new JProperty("dBLRDGOAcc", dBLRDGOAcc));
+
+                        result = tempResult;
+                        break;
                     }
-                    catch (Exception) { }
-                    tempResult.Add(new JProperty("ECStatus", ECStatus));
-                    tempResult.Add(new JProperty("EEStatus", EEStatus));
-
-                    tempResult.Add(new JProperty("HFOC", HFOC));
-                    tempResult.Add(new JProperty("HFOCPre", HFOCPre));
-
-                    tempResult.Add(new JProperty("dHFOAcc", dHFOAcc));
-                    tempResult.Add(new JProperty("dMethanolAcc", dMethanolAcc));
-
-                    tempResult.Add(new JProperty("dMEHFOAcc", dMEHFOAcc));
-                    tempResult.Add(new JProperty("dAEHFOAcc", dAEHFOAcc));
-                    tempResult.Add(new JProperty("dBLRHFOAcc", dBLRHFOAcc));
-                    tempResult.Add(new JProperty("dMEDGOAcc", dMEDGOAcc));
-                    tempResult.Add(new JProperty("dAEDGOAcc", dAEDGOAcc));
-                    tempResult.Add(new JProperty("dBLRDGOAcc", dBLRDGOAcc));
-
-                    result = tempResult;
-                    break;
             }
             resultResponse.Result = Value.Parser.ParseJson(result.ToJson());
             return resultResponse;
