@@ -1647,10 +1647,10 @@ namespace hmt_energy_csharp.ProtocolDatas
             //轴功率仪合计数据
             foreach (var shaft in shafts)
             {
-                totalIndicator.Power = (totalIndicator.Power ?? 0) + shaft.Power;
-                totalIndicator.Torque = (totalIndicator.Torque ?? 0) + shaft.Torque;
-                totalIndicator.Thrust = (totalIndicator.Thrust ?? 0) + shaft.Thrust;
-                totalIndicator.Rpm = (totalIndicator.Rpm ?? 0) + shaft.RPM;
+                totalIndicator.Power = Math.Abs((totalIndicator.Power ?? 0)) + Math.Abs(shaft.Power ?? 0);
+                totalIndicator.Torque = Math.Abs((totalIndicator.Torque ?? 0)) + Math.Abs(shaft.Torque ?? 0);
+                totalIndicator.Thrust = Math.Abs((totalIndicator.Thrust ?? 0)) + Math.Abs(shaft.Thrust ?? 0);
+                totalIndicator.Rpm = Math.Abs((totalIndicator.Rpm ?? 0)) + Math.Abs(shaft.RPM ?? 0);
             }
 
             tempSlip += totalIndicator.Rpm == 0 ? 0 : ((decimal)vessel.WaterSpeed / (decimal)totalIndicator.Rpm / (decimal)bsi.Pitch * 1852 * 1000 / 60);
@@ -3795,6 +3795,8 @@ namespace hmt_energy_csharp.ProtocolDatas
                         var Thrust = Convert.ToDecimal(sentArr[2]); //kNm
                         var RPM = Convert.ToDecimal(sentArr[3]); //rev/min
                         var Power = Convert.ToDecimal(sentArr[4]); //kW
+
+                        strDevice = strDevice == "1ERBMT" ? "shaft_1" : strDevice == "2ERBMT" ? "shaft_2" : strDevice;
 
                         if (lstSh.Any(t => t.Number == number && t.DeviceNo == strDevice))
                         {
