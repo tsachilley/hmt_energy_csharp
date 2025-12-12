@@ -13,6 +13,8 @@ service NavigationConfig {
 	rpc SelectList(SelectListRequest) returns (SelectListResponse);
 	rpc Update(UpdateRequest) returns (UpdateResponse);
 	rpc Delete(DeleteRequest) returns (DeleteResponse);
+	rpc SelectManualParams(SelectManualParamsRequest) returns (SelectManualParamsResponse);
+	rpc UpdateManualParams(UpdateManualParamsRequest) returns (UpdateManualParamsResponse);
 
 }
 
@@ -70,6 +72,27 @@ message DeleteRequest
 }
 
 message DeleteResponse
+{
+	int32 result = 1;
+	string err_message = 2;
+}
+
+message SelectManualParamsRequest
+{
+}
+
+message SelectManualParamsResponse
+{
+	google.protobuf.Value result = 1;
+	string err_message = 2;
+}
+
+message UpdateManualParamsRequest
+{
+	string parameters = 1;
+}
+
+message UpdateManualParamsResponse
 {
 	int32 result = 1;
 	string err_message = 2;
