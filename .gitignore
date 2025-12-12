@@ -268,3 +268,4 @@ src/hmt_energy_csharp.Blazor.Server.Tiered/Logs/*
 
 # Use abp install-libs to restore.
 **/wwwroot/libs/*
+*.zip
