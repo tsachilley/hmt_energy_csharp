@@ -173,6 +173,10 @@ namespace hmt_energy_csharp.ProtocolDatas
                             catch (Exception ex)
                             {
                             }
+                            finally
+                            {
+                                UpdateVesselAll(number, ReceiveDatetimeFmtDt);
+                            }
 
                             //log.AddRange(GetLossDevices(number));
                             //log.AddRange(GetLimitWarning(number));
@@ -183,8 +187,6 @@ namespace hmt_energy_csharp.ProtocolDatas
                             catch (Exception ex)
                             {
                             }
-
-                            UpdateVesselAll(number, ReceiveDatetimeFmtDt);
                         }
 
                         #region 解析过程

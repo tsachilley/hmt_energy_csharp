@@ -185,7 +185,7 @@ namespace hmt_energy_csharp.VesselInfos
             }
             if (!string.IsNullOrWhiteSpace(sorting))
             {
-                sbSql.Append($" order by {sorting}");
+                sbSql.Append($" order by \"{sorting}\"");
                 dbParameters.Add(new OracleParameter { ParameterName = ":Sorting", Value = sorting });
                 if (!string.IsNullOrWhiteSpace(asc))
                 {
