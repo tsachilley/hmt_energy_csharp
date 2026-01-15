@@ -183,16 +183,12 @@ namespace hmt_energy_csharp.VesselInfos
                 sbSql.Append($" and \"ReceiveDatetime\"<TO_TIMESTAMP('{Convert.ToDateTime(queryParams["EndDate"]).ToString("yyyy-MM-dd HH:mm:ss")}','yyyy-mm-dd hh24:mi:ss')");
                 dbParameters.Add(new OracleParameter { ParameterName = ":EndDate", Value = Convert.ToDateTime(queryParams["EndDate"]).ToString("yyyy-MM-dd HH:mm:ss") });
             }
-            if (!string.IsNullOrWhiteSpace(sorting))
-            {
-                sbSql.Append($" order by \"{sorting}\"");
-                dbParameters.Add(new OracleParameter { ParameterName = ":Sorting", Value = sorting });
-                if (!string.IsNullOrWhiteSpace(asc))
-                {
-                    sbSql.Append($" {asc}");
-                    dbParameters.Add(new OracleParameter { ParameterName = ":Asc", Value = asc });
-                }
-            }
+            if (string.IsNullOrWhiteSpace(sorting))
+                sorting = "ReceiveDatetime";
+            if (string.IsNullOrWhiteSpace(asc))
+                asc = "asc";
+            sbSql.Append($" order by \"{sorting}\"");
+            sbSql.Append($" {asc}");
             sbSql.Insert(0, "select ROWNUM rn,t1.\"Id\",t1.\"ReceiveDatetime\",t1.\"Longitude\",t1.\"Latitude\",t1.\"Course\",t1.\"MagneticVariation\",t1.\"TotalDistanceGrd\",t1.\"ResetDistanceGrd\",t1.\"TotalDistanceWat\",t1.\"ResetDistanceWat\",t1.\"WindDirection\",t1.\"WindSpeed\",t1.\"WaveHeight\",t1.\"WaveDirection\",t1.\"Temperature\",t1.\"Pressure\",t1.\"Weather\",t1.\"Visibility\",t1.\"WaterSpeed\",t1.\"GroundSpeed\",t1.\"BowDraft\",t1.\"AsternDraft\",t1.\"PortDraft\",t1.\"StarBoardDraft\",t1.\"Trim\",t1.\"Heel\",t1.\"Draft\",t1.\"Depth\",t1.\"DepthOffset\",t1.\"MESFOC\",t1.\"MEHFOConsumption\",t1.\"MEMDOConsumption\",t1.\"DGSFOC\",t1.\"DGHFOConsumption\",t1.\"DGMDOConsumption\",t1.\"BLRSFOC\",t1.\"BLRHFOConsumption\",t1.\"BLRMDOConsumption\",t1.\"Slip\",t1.\"MEPower\",t1.\"Torque\",t1.\"MERpm\",t1.\"Thrust\",t1.\"create_time\",t1.\"update_time\",t1.\"delete_time\",t1.\"BLGHFOCACC\",t1.\"BLGMDOCACC\",t1.\"BLRFCPerNm\",t1.\"BLRHFOCPerNm\",t1.\"BLRMDOCPerNm\",t1.\"DGFCPerNm\",t1.\"DGHFOCACC\",t1.\"DGHFOCPerNm\",t1.\"DGMDOCACC\",t1.\"DGMDOCPerNm\",t1.\"DGPower\",t1.\"FCPerNm\",t1.\"HFOCPerNm\",t1.\"MDOCPerNm\",t1.\"MEFCPerNm\",t1.\"MEHFOCACC\",t1.\"MEHFOCPerNm\",t1.\"MEMDOCACC\",t1.\"MEMDOCPerNm\",t1.\"SFOC\",t1.\"SN\",t1.\"Status\",t1.\"RtCII\",t1.\"Uploaded\",t1.\"X\",t1.\"Y\",t1.\"SeaTemperature\" from (").Append($") t1 where ROWNUM<={pageNumber * countPerPage}");
             dbParameters.Add(new OracleParameter { ParameterName = ":EndCount", Value = pageNumber * countPerPage });
             sbSql.Insert(0, "select t2.\"Id\",t2.\"ReceiveDatetime\",t2.\"Longitude\",t2.\"Latitude\",t2.\"Course\",t2.\"MagneticVariation\",t2.\"TotalDistanceGrd\",t2.\"ResetDistanceGrd\",t2.\"TotalDistanceWat\",t2.\"ResetDistanceWat\",t2.\"WindDirection\",t2.\"WindSpeed\",t2.\"WaveHeight\",t2.\"WaveDirection\",t2.\"Temperature\",t2.\"Pressure\",t2.\"Weather\",t2.\"Visibility\",t2.\"WaterSpeed\",t2.\"GroundSpeed\",t2.\"BowDraft\",t2.\"AsternDraft\",t2.\"PortDraft\",t2.\"StarBoardDraft\",t2.\"Trim\",t2.\"Heel\",t2.\"Draft\",t2.\"Depth\",t2.\"DepthOffset\",t2.\"MESFOC\",t2.\"MEHFOConsumption\",t2.\"MEMDOConsumption\",t2.\"DGSFOC\",t2.\"DGHFOConsumption\",t2.\"DGMDOConsumption\",t2.\"BLRSFOC\",t2.\"BLRHFOConsumption\",t2.\"BLRMDOConsumption\",t2.\"Slip\",t2.\"MEPower\",t2.\"Torque\",t2.\"MERpm\",t2.\"Thrust\",t2.\"create_time\",t2.\"update_time\",t2.\"delete_time\",t2.\"BLGHFOCACC\",t2.\"BLGMDOCACC\",t2.\"BLRFCPerNm\",t2.\"BLRHFOCPerNm\",t2.\"BLRMDOCPerNm\",t2.\"DGFCPerNm\",t2.\"DGHFOCACC\",t2.\"DGHFOCPerNm\",t2.\"DGMDOCACC\",t2.\"DGMDOCPerNm\",t2.\"DGPower\",t2.\"FCPerNm\",t2.\"HFOCPerNm\",t2.\"MDOCPerNm\",t2.\"MEFCPerNm\",t2.\"MEHFOCACC\",t2.\"MEHFOCPerNm\",t2.\"MEMDOCACC\",t2.\"MEMDOCPerNm\",t2.\"SFOC\",t2.\"SN\",t2.\"Status\",t2.\"RtCII\",t2.\"Uploaded\",t2.\"X\",t2.\"Y\",t2.\"SeaTemperature\" from (").Append($") t2 where rn>{(pageNumber - 1) * countPerPage} order by rn");
