@@ -25,12 +25,15 @@ public class NavigationDataService : NavigationData.NavigationDataBase
     private readonly IConsulService _consulService;
     private readonly IConfiguration _configuration;
 
+    private Stopwatch _stopwatch = new Stopwatch();
+
     public NavigationDataService(ILogger<NavigationDataService> logger, IVesselInfoService vesselInfoService, IConsulService consulService, IConfiguration configuration)
     {
         _logger = logger;
         _vesselInfoService = vesselInfoService;
         _consulService = consulService;
         _configuration = configuration;
+        _stopwatch.Restart();
     }
 
     public override async Task<NavigationDataRealTimeSingleResponse> NavigationDataRealTimeSingle(NavigationDataRealTimeSingleRequest request, ServerCallContext context)
@@ -43,7 +46,7 @@ public class NavigationDataService : NavigationData.NavigationDataBase
             #region 展示数据进行初始化
             var number = request.Number;
             //需单独初始化 否则不访问船端页面不会进行赋值
-            if (!StaticEntities.ShowEntities.Vessels.Any(t => t.SN == number))
+            if (!StaticEntities.ShowEntities.Vessels.Any(t => t.SN == number) || _stopwatch.Elapsed > TimeSpan.FromMinutes(10))
             {
                 var lastestVessel = await _vesselInfoService.GetLatestAsync(number);
                 StaticEntities.ShowEntities.Vessels.Add(lastestVessel);
@@ -76,6 +79,8 @@ public class NavigationDataService : NavigationData.NavigationDataBase
                 StaticEntities.ShowEntities.ScavengeAirs.RemoveAll(t => t.Number == number);
                 StaticEntities.ShowEntities.ShaftClutchs.RemoveAll(t => t.Number == number);
                 await _vesselInfoService.GetLatestInfosAsync(lastestVessel.SN, lastestVessel.ReceiveDatetime);
+
+                _stopwatch.Restart();
             }
 
             #endregion
