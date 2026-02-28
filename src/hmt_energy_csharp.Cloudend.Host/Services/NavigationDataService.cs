@@ -236,8 +236,10 @@ public class NavigationDataService : NavigationData.NavigationDataBase
                             prop.PropertyType == typeof(decimal?))
                             prop.SetValue(vesselEntity, Math.Round(Convert.ToDouble(prop.GetValue(vesselEntity)), 4));
                     }
-                    result = vesselEntity;
-                    var tempResult = result.ToJson().ToJObject();
+
+                    decimal? MEFC = 0m;
+                    decimal? ShaftPower = 0m;
+
                     var fsDtos = StaticEntities.ShowEntities.Flowmeters.FirstOrDefault(t => t.Number == request.Number).FlowmeterDtos;
                     var fsDtosClear = new List<FlowmeterDto> {
                             new FlowmeterDto { DeviceNo = "mefuel1", ConsAcc=0, ConsAct=0 },
@@ -306,6 +308,8 @@ public class NavigationDataService : NavigationData.NavigationDataBase
                             fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAct = dto.ConsAct;
                             fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].ConsAcc = dto.ConsAcc;
                             fsDtosClear[fsDtosClear.IndexOf(fsDtosClear.FirstOrDefault(t => t.DeviceNo == "mefuel1"))].FuelType = dto.FuelType;
+
+                            MEFC = dto.ConsAct;
                         }
                     }
 
@@ -323,7 +327,6 @@ public class NavigationDataService : NavigationData.NavigationDataBase
                         }
                     }
                     var fs = new JProperty("Flowmeters", JArray.FromObject(fsDtosClear));
-                    tempResult.Add(fs);
                     var ssDtos = StaticEntities.ShowEntities.Shafts.FirstOrDefault(t => t.Number == request.Number).ShaftDtos;
                     var ssDtosClear = new List<ShaftDto> {
                             new ShaftDto { DeviceNo = "shaft_1", Power=0, RPM=0, Torque=0, Thrust=0 },
@@ -341,6 +344,8 @@ public class NavigationDataService : NavigationData.NavigationDataBase
                         ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].RPM = dto.RPM;
                         ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Torque = dto.Torque;
                         ssDtosClear[ssDtosClear.IndexOf(ssDtosClear.FirstOrDefault(t => t.DeviceNo == "shaft_1"))].Thrust = dto.Thrust;
+
+                        ShaftPower = dto.Power;
                     }
 
                     foreach (var dto in ssDtosClear)
@@ -367,6 +372,11 @@ public class NavigationDataService : NavigationData.NavigationDataBase
                         }
                     }
                     var ss = new JProperty("Shafts", JArray.FromObject(ssDtosClear));
+
+                    vesselEntity.MESFOC = ShaftPower == 0 ? 0 : Math.Round((double)(MEFC / ShaftPower * 1000m), 4);
+                    result = vesselEntity;
+                    var tempResult = result.ToJson().ToJObject();
+                    tempResult.Add(fs);
                     tempResult.Add(ss);
 
                     var ECStatus = "";
